@@ -2873,6 +2873,7 @@ onBeforeUnmount(() => {
               :session-id="pane.sessionId || undefined"
               :model-instance-id="pane.modelInstanceId || undefined"
               :active="pane.key === activeChatKey"
+              :shared="pane.shared"
               :user-id="getUserId() || undefined"
               :main-id="getMainId()"
               :auth-token="authToken"
