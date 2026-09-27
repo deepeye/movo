@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, markRaw, reactive, ref } from 'vue'
 import { fetchOrgBilling } from '../api/auth'
 import { uploadChatDocument, uploadChatImage, type UploadedDocument, type UploadedImage } from '../api/chat'
 import { getSession, type ChatMessage, type SessionDetail, type SessionSummary } from '../api/sessions'
@@ -18,6 +18,13 @@ import { applyAssistantContentEvent } from '../features/execution-v3/domain/assi
 import type { BrowserAssistanceHandoff } from './browser/useBrowserWorkspace'
 import { stopChatGeneration } from './chatCancellation'
 import { foreignRunForViewer, type ForeignRun } from './sessionRunPresence'
+import {
+  noteSessionLiveControlFrame,
+  noteSessionLiveData,
+  startSessionLiveStream,
+  type SessionLiveAccessRevokedReason,
+  type SessionLiveStreamHandle,
+} from './useSessionLiveStream'
 
 export type RuntimeDocumentInfo = {
   id?: string
@@ -108,7 +115,24 @@ export type ChatRuntimePane = {
   foreignRun: ForeignRun | null
   foreignRunFinished: boolean
   refreshingSession: boolean
+  /** T7 access-loss latch: the ONLY writer is markAccessLost; once true it stays true. */
+  accessLost: boolean
+  /** T7: the typed reason of the latch above, retained for the access-lost notice. */
+  accessLostReason: SessionLiveAccessRevokedReason | null
+  /** T7: increments on every members.changed; drives header/dialog participant refreshes. */
+  membersRevision: number
+  /** T7: the single session live SSE stream bound to this pane while it is viewed. */
+  liveStream: SessionLiveStreamHandle | null
+  /** T7: bumped on every bind/teardown; stale stream callbacks compare it. */
+  liveGeneration: number
+  /** T7: authoritative identity used to mint snapshot refreshes after invalidations. */
+  liveAuth: PaneLiveAuth | null
+  /** T7: sequence guard for overlapping authoritative snapshot refreshes. */
+  liveRefreshSeq: number
 }
+
+/** T7: caller identity captured at bind time for the invalidation snapshot refresh. */
+export type PaneLiveAuth = { userId: string; mainId?: string; authToken?: string | null }
 
 type SendInput = {
   text: string
@@ -149,6 +173,7 @@ const state = reactive({
 })
 
 let localSeq = 0
+let runtimeCallbacks: RuntimeCallbacks = {}
 let messageSeq = 0
 const MAX_CACHED_PANES = 8
 
@@ -200,6 +225,13 @@ function createPane(input: { key?: string; sessionId: string | null; messages?: 
     foreignRun: null,
     foreignRunFinished: false,
     refreshingSession: false,
+    accessLost: false,
+    accessLostReason: null,
+    membersRevision: 0,
+    liveStream: null,
+    liveGeneration: 0,
+    liveAuth: null,
+    liveRefreshSeq: 0,
   }
 }
 
@@ -228,6 +260,7 @@ function activePane() {
 function setActivePane(pane: ChatRuntimePane) {
   pane.lastActivatedAt = Date.now()
   state.activeKey = pane.key
+  syncPaneLiveStream()
 }
 
 function pruneInactivePanes() {
@@ -247,7 +280,11 @@ function pruneInactivePanes() {
     keepBySession.add(pane.key)
   }
 
-  state.panes = state.panes.filter((pane) => mustKeep.has(pane.key) || keepBySession.has(pane.key))
+  const kept = state.panes.filter((pane) => mustKeep.has(pane.key) || keepBySession.has(pane.key))
+  for (const pane of state.panes) {
+    if (!kept.includes(pane)) stopPaneLiveStream(pane)
+  }
+  state.panes = kept
 }
 
 function clearUnread(sessionId: string | null) {
@@ -297,13 +334,135 @@ function resolvePaneSession(pane: ChatRuntimePane, sessionId: string, callbacks:
     if (!keeper.activeAssistantMessageId && removed.activeAssistantMessageId) keeper.activeAssistantMessageId = removed.activeAssistantMessageId
     if (!keeper.activeIntervention && removed.activeIntervention) keeper.activeIntervention = removed.activeIntervention
     if (!keeper.authResumeController && removed.authResumeController) keeper.authResumeController = removed.authResumeController
+    if (!keeper.liveAuth && removed.liveAuth) keeper.liveAuth = removed.liveAuth
     if (state.activeKey === removed.key) state.activeKey = keeper.key
+    stopPaneLiveStream(removed)
     state.panes = state.panes.filter((item) => item !== removed)
     callbacks.onSessionResolved?.(sessionId)
+    if (state.activeKey === keeper.key) startPaneLiveStream(keeper)
     return
   }
   pane.sessionId = sessionId
   callbacks.onSessionResolved?.(sessionId)
+  syncPaneLiveStream()
+}
+
+function stopPaneLiveStream(pane: ChatRuntimePane) {
+  pane.liveGeneration += 1
+  const handle = pane.liveStream
+  pane.liveStream = null
+  handle?.stop()
+  noteSessionLiveData(pane.key)
+}
+
+function paneLiveCallbackValid(pane: ChatRuntimePane, generation: number, sessionId: string) {
+  return findPaneByKey(pane.key) === pane && pane.liveGeneration === generation && pane.sessionId === sessionId
+}
+
+async function refreshPaneLiveState(pane: ChatRuntimePane, generation: number, sessionId: string, reopen: boolean) {
+  const auth = pane.liveAuth
+  if (!auth || !paneLiveCallbackValid(pane, generation, sessionId)) return
+  const sequence = pane.liveRefreshSeq + 1
+  pane.liveRefreshSeq = sequence
+  let detail: SessionRuntimeDetail
+  try {
+    detail = await getSession(sessionId, auth.userId, auth.mainId, auth.authToken)
+  } catch {
+    return
+  }
+  if (!paneLiveCallbackValid(pane, generation, sessionId) || pane.liveRefreshSeq !== sequence) return
+  if (detail.execution_location) pane.executionLocation = detail.execution_location
+  if (detail.runtime_preset_id) pane.runtimePresetId = detail.runtime_preset_id
+  if (detail.model_instance_id !== undefined && detail.model_instance_id !== null) pane.modelInstanceId = detail.model_instance_id
+  if (detail.code_project !== undefined) pane.codeProject = detail.code_project
+  await refreshAfterRun(runtimeCallbacks, sessionId)
+  if (!reopen || !paneLiveCallbackValid(pane, generation, sessionId)) return
+  // T6 contract: every control invalidation counts toward the three-frame cap,
+  // even when the authoritative payload carries no cursor to reopen from.
+  const delay = noteSessionLiveControlFrame(pane.key)
+  if (delay > 0) await new Promise<void>((resolve) => { setTimeout(resolve, delay) })
+  const handle = pane.liveStream
+  const cursor = typeof detail.live_cursor === 'string' && detail.live_cursor ? detail.live_cursor : null
+  if (!handle || !cursor) return
+  if (pane.liveStream !== handle || !paneLiveCallbackValid(pane, generation, sessionId)) return
+  handle.openFreshStream(cursor)
+}
+
+function startPaneLiveStream(pane: ChatRuntimePane) {
+  if (pane.liveStream) return
+  if (!pane.sessionId || !pane.liveAuth || pane.accessLost) return
+  if (pane.key !== state.activeKey) return
+  const sessionId = pane.sessionId
+  const generation = pane.liveGeneration + 1
+  pane.liveGeneration = generation
+  const refresh = (reopen: boolean) => {
+    void refreshPaneLiveState(pane, generation, sessionId, reopen).catch(() => undefined)
+  }
+  const liveProgress = () => {
+    if (!paneLiveCallbackValid(pane, generation, sessionId)) return false
+    noteSessionLiveData(pane.key)
+    return true
+  }
+  const handle = startSessionLiveStream({
+    sessionId,
+    paneKey: pane.key,
+    authToken: pane.liveAuth.authToken,
+    onThreadChanged: () => { refresh(true) },
+    onMembersChanged: (paneKey) => {
+      // members.changed is a CONTROL frame: it counts toward the cap (inside
+      // the control-frame refresh) and must not reset the streak via liveProgress.
+      if (!paneLiveCallbackValid(pane, generation, sessionId)) return
+      notifyMembersChanged(paneKey)
+      refresh(true)
+    },
+    onTurnStarted: () => { if (liveProgress()) refresh(false) },
+    onExecution: () => { liveProgress() },
+    onTurnCompleted: () => { if (liveProgress()) refresh(false) },
+    onAccessLost: (paneKey, reason) => markAccessLost(paneKey, reason),
+  })
+  pane.liveStream = markRaw(handle)
+}
+
+function syncPaneLiveStream() {
+  const active = activePane()
+  for (const pane of state.panes) {
+    if (pane !== active && pane.liveStream) stopPaneLiveStream(pane)
+  }
+  if (active) startPaneLiveStream(active)
+}
+
+/** T7: bump the pane's membersRevision on members.changed; never a fetch. */
+function notifyMembersChanged(paneKey: string) {
+  const pane = findPaneByKey(paneKey)
+  if (pane) pane.membersRevision += 1
+}
+
+/** T7: pane-scoped counter by session id for the single-instance header call site. */
+function membersRevisionFor(sessionId: string | null): number {
+  if (!sessionId) return 0
+  const pane = findPaneBySessionId(sessionId)
+  return pane ? pane.membersRevision : 0
+}
+
+/**
+ * T7 access-loss latch — the ONLY writer of `accessLost`. Exactly once per pane
+ * key it aborts the session SSE stream, the local POST handle, and the recovery
+ * controller; later calls for the same key are no-ops that never touch an
+ * already-aborted handle. T8's POST path calls this same action; T10 only reads
+ * the flag.
+ */
+function markAccessLost(paneKey: string, reason: SessionLiveAccessRevokedReason) {
+  const pane = findPaneByKey(paneKey)
+  if (!pane || pane.accessLost) return
+  pane.accessLost = true
+  pane.accessLostReason = reason
+  stopPaneLiveStream(pane)
+  pane.activeStream?.abort()
+  pane.activeStream = null
+  pane.abortController?.abort()
+  pane.abortController = null
+  pane.authResumeController?.abort()
+  pane.authResumeController = null
 }
 
 function ensureExecV3(msg: RuntimeMessage): ExecutionStoreV3 {
@@ -369,6 +528,7 @@ async function sendMessage(key: string, input: SendInput, callbacks: RuntimeCall
   const operationId = pane.operationId
   setPaneRunning(pane, true)
   pane.activeAuthToken = input.authToken
+  pane.liveAuth = { userId: input.userId, mainId: input.mainId, authToken: input.authToken }
   let uploadedImages: UploadedImage[] = []
   let uploadedDocuments: RuntimeDocumentInfo[] = []
   try {
@@ -639,6 +799,7 @@ async function stopGeneration(key: string) {
 }
 
 export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
+  runtimeCallbacks = callbacks
   const panes = computed(() => state.panes)
   const activeChatKey = computed(() => state.activeKey)
   const activeChatPane = computed(() => activePane())
@@ -654,6 +815,7 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
 
   function reset() {
     for (const pane of state.panes) {
+      stopPaneLiveStream(pane)
       pane.activeStream?.abort()
       pane.abortController?.abort()
       pane.authResumeController?.abort()
@@ -675,6 +837,7 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
     clearUnread(sessionId)
     const existing = findPaneBySessionId(sessionId)
     if (existing) {
+      existing.liveAuth = { userId, mainId, authToken }
       setActivePane(existing)
       return existing
     }
@@ -689,6 +852,7 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
     pane.modelInstanceId = detail.model_instance_id || ''
     pane.codeProject = detail.code_project || null
     updateForeignRun(pane, detail.active_run, userId)
+    pane.liveAuth = { userId, mainId, authToken }
     state.panes = [...state.panes, pane]
     setActivePane(pane)
     pruneInactivePanes()
@@ -791,8 +955,10 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
   }
 
   function removeSession(sessionId: string) {
-    findPaneBySessionId(sessionId)?.authResumeController?.abort()
-    state.panes = state.panes.filter((pane) => pane.sessionId !== sessionId)
+    const pane = findPaneBySessionId(sessionId)
+    if (pane) stopPaneLiveStream(pane)
+    pane?.authResumeController?.abort()
+    state.panes = state.panes.filter((item) => item.sessionId !== sessionId)
     clearUnread(sessionId)
     if (currentSessionId.value === sessionId) {
       startLocalSession()
@@ -875,6 +1041,9 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
     syncActiveRuns,
     refreshSession,
     removeSession,
+    markAccessLost,
+    notifyMembersChanged,
+    membersRevisionFor,
     sessionIsRunning,
     sessionIsUnread,
     clearUnread,

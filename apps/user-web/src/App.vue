@@ -2654,6 +2654,7 @@ onBeforeUnmount(() => {
         :user-id="getUserId() || ''"
         :main-id="getMainId()"
         :auth-token="authToken"
+        :refresh-token="chatRuntime.membersRevisionFor(currentSessionId)"
         @left="handleSessionLeft"
       />
 
