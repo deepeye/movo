@@ -11,7 +11,6 @@ from app.services.personal_knowledge.access import PersonalKnowledgeAccessServic
 
 
 async def _resolve_document(*, tenant_id: str, user_id: str, scope: str, source_id: str) -> dict[str, Any]:
-    db = get_db()
     if scope == "personal":
         access = await PersonalKnowledgeAccessService().require_view(
             main_id=tenant_id, user_id=user_id, resource_id=source_id,
@@ -19,11 +18,15 @@ async def _resolve_document(*, tenant_id: str, user_id: str, scope: str, source_
         document_id = str(access.resource.get("active_document_id") or "")
         if not document_id:
             raise LookupError("knowledge_document_not_ready")
+        # Check access before opening the database. Besides avoiding unnecessary
+        # work, this keeps revoked-resource checks independent of DB availability.
+        db = get_db()
         document = await db.knowledge_documents.find_one({
             "_id": document_id, "main_id": tenant_id, "resource_id": source_id,
             "scope": "personal", "deleted_at": None,
         })
     elif scope == "organization":
+        db = get_db()
         document_id = source_id
         document = await db.knowledge_documents.find_one({
             "_id": document_id, "main_id": tenant_id, "deleted_at": None,
