@@ -4,13 +4,6 @@ export type ExecutionTimelineEntry =
   | { type: 'item'; key: string; item: ExecutionItemV3 }
   | { type: 'tool-group'; key: string; items: ExecutionItemV3[]; statusItems: ExecutionItemV3[] }
 
-export function latestToolGroupKey(entries: ExecutionTimelineEntry[]): string | null {
-  for (let index = entries.length - 1; index >= 0; index -= 1) {
-    if (entries[index].type === 'tool-group') return entries[index].key
-  }
-  return null
-}
-
 const SENSITIVE_ARGUMENT = /(?:token|secret|password|authorization|cookie|api[_-]?key)/i
 const INTERNAL_FILE_ARGUMENT = /^(?:object_path|signed_url|download_url|local_path|storage_path|blueprint_object_path)$/i
 const FILE_ARGUMENT = /^(?:artifact|artifacts|file|files|file_path|path|document|documents|image|images|filename)$/i
@@ -29,7 +22,7 @@ export type ToolCapabilityKey =
   | 'execution.v3.activity.call_tools'
 
 function toolCapability(item: ExecutionItemV3): ToolCapabilityKey | null {
-  const name = toolName(item).toLowerCase().replace(/[^a-z0-9]+/g, '_')
+  const name = String(item.payload?.name || item.payload?.display_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_')
   if (/(?:^|_)(todo_write|update_plan|write_plan)(?:_|$)/.test(name)) return 'execution.v3.activity.update_plan'
   if (/(?:^|_)(browser|navigate|click|fill|press|screenshot)(?:_|$)/.test(name)) return 'execution.v3.activity.use_browser'
   if (/(?:^|_)(web_search|search_web|internet_search|external_search)(?:_|$)/.test(name)) return 'execution.v3.activity.search_web'
@@ -53,6 +46,14 @@ export function toolCapabilityKeys(items: ExecutionItemV3[]): ToolCapabilityKey[
 
 export function toolName(item: ExecutionItemV3): string {
   return String(item.payload?.display_name || item.payload?.name || '').trim() || 'tool'
+}
+
+/** Prefer the Tool Profile's user-facing name, but never surface an adapter identifier as a title. */
+export function toolDisplayName(item: ExecutionItemV3): string {
+  const displayName = String(item.payload?.display_name || '').replace(/\s+/g, ' ').trim()
+  const adapterName = String(item.payload?.name || '').trim()
+  if (!displayName || displayName === adapterName || /^[a-z][a-z0-9]*(?:[_.:-][a-z0-9]+)+$/i.test(displayName)) return ''
+  return displayName.slice(0, 80)
 }
 
 /** Localized, user-facing action label; raw adapter tool names remain audit metadata only. */
@@ -210,8 +211,9 @@ export function toolCallSummary(item: ExecutionItemV3): string {
   }
   if (action === 'execution.v3.activity.run_commands') return compactValue(args.description).slice(0, DETAIL_LIMIT)
   if (action === 'execution.v3.activity.update_plan') return ''
+  if (fileValue) return friendlyFileValue(fileValue).slice(0, DETAIL_LIMIT)
   const description = compactValue(args.description)
-  return description || toolCallDetail(item)
+  return description.slice(0, DETAIL_LIMIT)
 }
 
 /** A schema-agnostic, redacted view of supplied call arguments for the detail list. */

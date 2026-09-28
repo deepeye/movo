@@ -18,6 +18,7 @@ from app.api.time_utils import utc_iso
 from app.services.skill_assets.trajectory_distiller import distill_trajectory, refine_steps
 from app.services.skills import user_skill_service
 from app.services.org_skill_adapter import _workflow_markdown, _workflow_nodes, organization_skill_adapter
+from app.services.personal_knowledge.document_selection import validate_personal_workflow_documents
 from app.core.config import get_settings
 from app.llm.factory import get_llm_client
 from app.llm.types import Message, Role
@@ -661,6 +662,7 @@ _WORKFLOW_NODE_TYPES = {
     "generate_content",
     "translate_rewrite",
     "fill_table",
+    "review_check",
     "export_delivery",
 }
 
@@ -705,6 +707,9 @@ _NODE_TYPE_ALIASES = {
     "翻译": "translate_rewrite",
     "文档翻译": "translate_rewrite",
     "填表制表": "fill_table",
+    "校验复核": "review_check",
+    "审核检查": "review_check",
+    "复核检查": "review_check",
     "导出交付": "export_delivery",
     "导出": "export_delivery",
 }
@@ -1275,6 +1280,8 @@ async def _generate_workflow_nodes_with_llm(payload: WorkflowNodesGenerateReques
     allowed_config_keys = {
         "input", "target", "method", "format", "source", "failurePolicy",
         "resourceTypes", "outputAlias", "toolId", "toolName", "toolScope",
+        "sourceType", "knowledgeScope", "knowledgeSourceId",
+        "reviewSubject", "reviewCriteria", "reviewSubjectNodeId", "reviewCriteriaNodeId", "reviewCriteriaMode",
         "targetName", "targetUrl",
     }
     for node in existing_nodes:
@@ -1290,13 +1297,14 @@ async def _generate_workflow_nodes_with_llm(payload: WorkflowNodesGenerateReques
         "你是业务流程 Skill 配置助手。你的任务是把非技术用户的业务意图整理成语义化业务步骤节点。"
         "这些节点是图规划的强指导，不是固定执行图；不要生成字段 Schema、入参出参、循环、条件分支、工具参数或代码逻辑。"
         "节点类型只能使用以下英文枚举：read_material, extract_resources, understand_image, extract_info, compute_metric, data_collect, browser_automation, internal_search, external_search, call_tool, "
-        "script_plugin, generate_content, translate_rewrite, fill_table, export_delivery。"
+        "script_plugin, generate_content, translate_rewrite, fill_table, review_check, export_delivery。"
         "每个节点只表达业务步骤：type,title,description,businessConfig,outputAlias,boundWritingSkillId。"
         "businessConfig 只能放业务级短语，例如 input, target, method, format, source, failurePolicy；"
         "browser_automation 可使用 targetName 和 targetUrl；不要放其他技术参数。"
         "如果需要从文档/材料中拿出图片、URL、附件等可继续处理的资源，使用 extract_resources，并在 businessConfig.resourceTypes 中写 images/urls/attachments。"
         "如果需要理解图片、截图、图表或文档内嵌图片的视觉内容，使用 understand_image；通常它应跟在 extract_resources 之后。"
         "如果需要从文本、表格、文档解析结果或图片理解结果中抽取公司名、金额、日期、字段值等语义信息，使用 extract_info。"
+        "如果需要按已有依据逐项检查上游结果或交付内容，使用 review_check；它是给 Agent 的复核指导，不是固定循环。"
         "如果需要从已知 URL 或上游抽取出的链接采集网页正文，使用 data_collect；如果需要搜索未知公开资料，使用 external_search。"
         "如果需要 MCP、企业系统或第三方工具，使用 call_tool；内部知识库使用 internal_search。"
         "如果需要在网页或企业后台中查询、填写、保存、提交、上传或发布，使用 browser_automation；"
@@ -1349,7 +1357,10 @@ async def _generate_workflow_nodes_with_llm(payload: WorkflowNodesGenerateReques
             Message(role=Role.USER, content=user_prompt),
         ]
     )
-    return _extract_workflow_nodes_from_text(str((resp.content if resp else "") or ""), max_nodes)
+    from app.services.workflow_node_bindings import restore_workflow_bindings
+
+    generated = _extract_workflow_nodes_from_text(str((resp.content if resp else "") or ""), max_nodes)
+    return restore_workflow_bindings(existing_nodes, generated)
 
 
 async def _polish_workflow_node_with_llm(payload: WorkflowNodePolishRequest) -> str:
@@ -2040,6 +2051,23 @@ async def list_selectable_skills(
     )
 
 
+async def _validate_personal_workflow_documents(
+    payload: AdminShapeSkillPayload, *, main_id: str, user_id: str,
+) -> None:
+    if payload.type != "workflow":
+        return
+    try:
+        await validate_personal_workflow_documents(
+            main_id=main_id, user_id=user_id, nodes=_workflow_nodes(payload.config),
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail="无权使用所选知识文档，请重新选择") from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=409, detail="所选知识文档已删除或尚未解析，请重新选择") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="请先选择要读取的知识文档") from exc
+
+
 @router.post("/skills", response_model=ApiResponse)
 async def create_admin_shape_skill(
     payload: AdminShapeSkillPayload,
@@ -2048,6 +2076,7 @@ async def create_admin_shape_skill(
     main_id_snake: Optional[str] = Query(None, alias="main_id"),
 ) -> ApiResponse:
     resolved_main_id = main_id_snake or main_id
+    await _validate_personal_workflow_documents(payload, main_id=resolved_main_id, user_id=user_id)
     created = await user_skill_service.create_skill(
         user_id,
         _admin_shape_payload_to_user_payload(payload, user_id=user_id, main_id=resolved_main_id),
@@ -2093,6 +2122,7 @@ async def update_skill(
     current = await user_skill_service.get_skill(user_id, skill_id, main_id=resolved_main_id)
     if not current:
         raise HTTPException(status_code=404, detail="Skill not found")
+    await _validate_personal_workflow_documents(payload, main_id=resolved_main_id, user_id=user_id)
     lifecycle = SkillLifecycleService()
     if not lifecycle.is_platform_skill(current):
         updated = await user_skill_service.update_skill(user_id, skill_id, updates, main_id=resolved_main_id)

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from bson import BSON
 
 from app.enterprise_capabilities.artifacts.document_result import public_document_parse_result
+from app.enterprise_capabilities.tools.result_compaction import compact_tool_result
 from app.enterprise_capabilities.data.script import run_script
 from app.enterprise_capabilities.runtime.contracts import CapabilityExecutionContext
 from app.enterprise_capabilities.tools.persistence_codec import restore_json_field, store_json_field
@@ -79,6 +80,28 @@ def test_document_result_hides_docling_tree_but_keeps_markdown_contract() -> Non
     assert "structured_content" not in projected["parsed_documents"][0]
     assert "parsed_documents" not in projected["documents"]
     assert "active_document_markdown" not in projected["documents"]
+
+
+def test_document_result_keeps_complete_markdown_under_tool_result_limit() -> None:
+    markdown = "服务合同条款" * 1035
+    raw = {
+        "success": True,
+        "active_document_markdown": markdown,
+        "parsed_documents": [{
+            "filename": "合同.docx", "parse_status": "parsed",
+            "markdown": markdown, "inline_markdown": markdown,
+            "markdown_chars": len(markdown),
+        }],
+        "documents": {"active_document_markdown": markdown},
+        "evidence_bundle": {"sources": [{"content": markdown}]},
+    }
+
+    result = compact_tool_result(public_document_parse_result(raw))
+
+    assert result.get("truncated") is not True
+    assert result["parsed_documents"][0]["markdown"] == markdown
+    assert "inline_markdown" not in result["parsed_documents"][0]
+    assert "active_document_markdown" not in result
 
 
 def test_object_path_alone_is_recognized_and_normalized_as_document() -> None:

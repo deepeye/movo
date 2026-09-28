@@ -211,7 +211,33 @@
                               @update:text="(value) => step.text = value"
                               @update:business-config="(value) => step.businessConfig = value"
                             />
-                            <div v-else-if="step.type !== 'script_plugin'" class="node-description-field">
+                            <KnowledgeDocumentSourceConfig
+                              v-if="step.type === 'read_material'"
+                              :business-config="step.businessConfig"
+                              :output-alias="step.outputAlias || ''"
+                              @update:business-config="(value) => step.businessConfig = value"
+                              @update:output-alias="(value) => step.outputAlias = value"
+                            />
+                            <ReviewCheckNodeConfig
+                              v-if="step.type === 'review_check'"
+                              :business-config="step.businessConfig"
+                              :upstream-outputs="reviewSourceOptions(index)"
+                              :output-alias="step.outputAlias || ''"
+                              @update:business-config="(value) => step.businessConfig = value"
+                              @update:output-alias="(value) => step.outputAlias = value"
+                            />
+                            <div v-if="step.type !== 'read_material' && step.type !== 'review_check'" class="node-description-field">
+                              <div class="node-description-label">输出名（供后续节点引用）</div>
+                              <n-input v-model:value="step.outputAlias" size="small" placeholder="例如：待审合同、审核规则" />
+                            </div>
+                            <details v-if="step.type === 'read_material' || step.type === 'review_check'"
+                              class="node-optional-requirement" :open="Boolean(step.text?.trim())" @click.stop>
+                              <summary>补充要求（可选）<span>需要特殊处理时再填写</span></summary>
+                              <n-input v-model:value="step.text" type="textarea"
+                                :autosize="{ minRows: 2, maxRows: 6 }" class="step-input"
+                                :placeholder="t('workflow.preset.' + step.type + '.placeholder')" />
+                            </details>
+                            <div v-if="step.type !== 'script_plugin' && step.type !== 'browser_automation' && step.type !== 'read_material' && step.type !== 'review_check'" class="node-description-field">
                               <div class="node-description-label">{{ t('节点要求') }}</div>
                               <n-input
                                 v-model:value="step.text"
@@ -829,6 +855,9 @@ import translateRewriteIcon from '../assets/workflow-node-icons/translate-rewrit
 import fillTableIcon from '../assets/workflow-node-icons/fill-table.svg?raw';
 import exportDeliveryIcon from '../assets/workflow-node-icons/export-delivery.svg?raw';
 import BrowserAutomationNodeConfig from './workflow/BrowserAutomationNodeConfig.vue';
+import KnowledgeDocumentSourceConfig from './workflow/KnowledgeDocumentSourceConfig.vue';
+import ReviewCheckNodeConfig from './workflow/ReviewCheckNodeConfig.vue';
+import { bindReviewSources } from './workflow/reviewSourceBinding';
 import { browserAutomationNodeMeta, looksLikeBrowserAutomation } from '../workflow/browserAutomationNode';
 import SkillPublishDialog from './skills/SkillPublishDialog.vue';
 
@@ -974,8 +1003,8 @@ const workflowNodeTypes: Array<{
     icon: readMaterialIcon,
     defaultTitle: '读取上传材料',
     placeholder: '例如：读取用户上传的传播数据文档和原始材料。',
-    defaultConfig: { source: '上传材料', outputAlias: '原始材料' },
-    usageDescription: '用于读取当前任务中用户上传的文档、表格等材料，将可解析的正文、表格和文件信息交给后续节点。它只负责读取材料，不负责抽取字段、统计计算或生成内容。',
+    defaultConfig: { sourceType: 'upload', source: '上传材料', outputAlias: '原始材料' },
+    usageDescription: '读取用户上传材料，或按权限读取指定的个人知识文档。知识文档会按顺序续读，不使用相似度片段代替全文。',
     usageExample: '读取用户上传的《华东区域项目进展报告.docx》和《项目执行数据.xlsx》，获取报告正文，以及 Excel 中“项目清单”和“月度进度”两个工作表的全部内容。',
   },
   {
@@ -1143,6 +1172,21 @@ const workflowNodeTypes: Array<{
     usageExample: '将上游项目数据填入《月度项目台账.xlsx》的“6月台账”工作表，按项目编号匹配行，填写负责人、完成率、回款金额和风险等级。',
   },
   {
+    type: 'review_check',
+    label: '校验复核',
+    shortLabel: '复核',
+    color: '#b45309',
+    bg: '#fffbeb',
+    icon: extractInfoIcon,
+    defaultTitle: '复核上游结果',
+    placeholder: '例如：依据审核规则逐项核对合同条款，列出风险、缺失项和无法确认的事项。',
+    defaultConfig: {
+      reviewSubject: '', reviewCriteria: '', reviewCriteriaMode: 'upstream', outputAlias: '复核结果',
+    },
+    usageDescription: '指导 Agent 根据已有依据检查上游事实或生成结果，逐项给出判断、原文证据和待人工确认项。',
+    usageExample: '用审核规则逐条核对合同条款：每条规则给出合同原文和规则原文，无法核实时标记需要人工复核。',
+  },
+  {
     type: 'export_delivery',
     label: '导出交付',
     shortLabel: '导出',
@@ -1234,6 +1278,11 @@ const targetAudienceOptions = toSelectOptions(targetAudienceSuggestions);
 const preferredStyleOptions = toSelectOptions(preferredStyleSuggestions);
 
 const workflowTypeMap = computed(() => Object.fromEntries(workflowNodeTypes.map((item) => [item.type, item])));
+function reviewSourceOptions(index: number): Array<{ id: string; alias: string }> {
+  return workflowSteps.value.slice(0, index).map(item => ({
+    id: item.id, alias: String(item.outputAlias || item.businessConfig?.outputAlias || '').trim(),
+  })).filter(item => item.alias);
+}
 const normalizedStepText = computed(() => workflowSteps.value.map((item) => buildNodeText(item).trim()).filter(Boolean).join('\n'));
 const workflowPreviewNodes = computed(() => workflowSteps.value.map((item) => ({
   id: item.id,
@@ -1818,6 +1867,11 @@ function handleNodeTypeChange(step: WorkflowStep, newType: WorkflowNodeType) {
 function appendNodeByType(type: WorkflowNodeType) {
   const text = newStepText.value.trim();
   const next = createWorkflowNode(type, text ? { text } : {});
+  const used = new Set(workflowSteps.value.map(item => item.outputAlias || item.businessConfig?.outputAlias));
+  const base = next.outputAlias || next.title || '节点输出';
+  let index = 2;
+  while (used.has(next.outputAlias)) next.outputAlias = `${base}${index++}`;
+  next.businessConfig.outputAlias = next.outputAlias;
   workflowSteps.value = [...workflowSteps.value, next];
   activeStepId.value = next.id;
   if (text) newStepText.value = '';
@@ -2306,8 +2360,28 @@ async function saveScriptAdvancedDrawer() {
 
 async function saveWorkflow(): Promise<boolean> {
   if (!skill.value) return false;
-  if (!serializeWorkflowNodes().length) {
+  const workflowNodes = serializeWorkflowNodes();
+  if (!workflowNodes.length) {
     message.warning(t('workflow.at_least_one_step'));
+    return false;
+  }
+  const missingKnowledge = workflowNodes.find(node => node.type === 'read_material'
+    && node.businessConfig?.sourceType === 'knowledge_document'
+    && !String(node.businessConfig?.knowledgeSourceId || '').trim());
+  if (missingKnowledge) {
+    activeStepId.value = String(missingKnowledge.id || '');
+    message.warning('请先选择要读取的知识文档');
+    return false;
+  }
+  const aliases = workflowNodes.map(node => String(node.outputAlias || '').trim()).filter(Boolean);
+  if (aliases.length !== new Set(aliases).size) {
+    message.warning('节点输出名不能重复，请为不同材料设置不同名称');
+    return false;
+  }
+  const invalidReviewId = bindReviewSources(workflowNodes);
+  if (invalidReviewId) {
+    activeStepId.value = invalidReviewId;
+    message.warning('请为校验复核选择有效的上游复核对象和判定依据');
     return false;
   }
   saving.value = true;
@@ -2315,7 +2389,7 @@ async function saveWorkflow(): Promise<boolean> {
     if (!(await ensureScriptPluginsChecked())) {
       return false;
     }
-    const nodes = serializeWorkflowNodes();
+    const nodes = workflowNodes;
     const updated = await persistSkill({
       name: skill.value.name,
       description: skill.value.description,
@@ -3219,6 +3293,14 @@ watch(() => [props.userId, props.mainId], () => {
   font-size: 13px;
   font-weight: 700;
 }
+
+.node-optional-requirement { margin-top: 10px; border-top: 1px solid #e4eaf4; }
+.node-optional-requirement summary { display: flex; align-items: center; gap: 8px; padding: 12px 2px; color: #53647d; font-size: 12px; font-weight: 700; cursor: pointer; list-style: none; }
+.node-optional-requirement summary::-webkit-details-marker { display: none; }
+.node-optional-requirement summary::before { content: '＋'; color: #6681b7; font-size: 16px; font-weight: 400; }
+.node-optional-requirement[open] summary::before { content: '－'; }
+.node-optional-requirement summary span { color: #98a5b8; font-size: 11px; font-weight: 400; }
+.node-optional-requirement :deep(.n-input) { margin-bottom: 8px; }
 
 .node-usage-guide {
   margin-top: 8px;

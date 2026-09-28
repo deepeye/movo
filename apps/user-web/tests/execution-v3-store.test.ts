@@ -6,7 +6,7 @@ import { isRef, reactive } from 'vue'
 import { useAuthoritativeMessages } from '../src/components/chat/useAuthoritativeMessages'
 import { refreshAfterRun } from '../src/composables/chatRuntimeRefresh'
 import { activityOutcome, activityStateMessageKey, hasActiveRunningLeaf, hasVisibleActiveRunningLeaf, runningContainerIds } from '../src/features/execution-v3/domain/activityPresentation'
-import { collapseRepeatedToolCalls, latestToolGroupKey, toolActionLabelKey, toolCallDetail, toolCallSummary, toolCapabilityKeys } from '../src/features/execution-v3/domain/repeatedToolCalls'
+import { collapseRepeatedToolCalls, toolActionLabelKey, toolCallDetail, toolCallSummary, toolCapabilityKeys, toolDisplayName } from '../src/features/execution-v3/domain/repeatedToolCalls'
 import { elapsedRunMs, formatRunDuration } from '../src/features/execution-v3/domain/runTiming'
 import { applyAssistantContentEvent } from '../src/features/execution-v3/domain/assistantContent'
 import { decideToolApproval, listPendingToolApprovals } from '../src/api/toolApprovals'
@@ -46,12 +46,6 @@ function event(overrides: Partial<ExecutionEventV3>): ExecutionEventV3 {
   assert.deepEqual(timeline.map((entry) => entry.type), ['item', 'tool-group', 'item'])
   assert.equal(timeline[0].type === 'item' && timeline[0].item.id, 'note')
   assert.equal(timeline[1].type === 'tool-group' && timeline[1].items.length, 2)
-  assert.equal(latestToolGroupKey(timeline), timeline[1].key)
-  assert.equal(latestToolGroupKey([
-    { type: 'tool-group', key: 'older-tool-group', items: [], statusItems: [] },
-    { type: 'tool-group', key: 'latest-tool-group', items: [], statusItems: [] },
-  ]), 'latest-tool-group')
-  assert.equal(latestToolGroupKey(timeline.filter(entry => entry.type === 'item')), null)
   assert.equal(timeline[1].type === 'tool-group' && timeline[1].statusItems.length, 4)
   assert.deepEqual(timeline[1].type === 'tool-group' && timeline[1].items.map(item => item.id), ['bash-1', 'read-1'])
   assert.equal(toolCallSummary(items[3]), '查看根目录')
@@ -102,7 +96,29 @@ function event(overrides: Partial<ExecutionEventV3>): ExecutionEventV3 {
     payload: { name: 'skillhub_install', args: { coordinate: '@owner/birdwatching' } },
   } as any
   assert.equal(toolActionLabelKey(skillHubInstall), 'execution.v3.activity.install_skill')
-  assert.equal(toolCallSummary(skillHubInstall), 'coordinate: @owner/birdwatching')
+  assert.equal(toolCallSummary(skillHubInstall), '')
+
+  const firstKnowledgeRead = {
+    ...items[3], payload: { name: 'knowledge_read_document', display_name: '读取指定知识文档', args: { scope: 'organization', source_id: 'private-id', offset: 0, max_chars: 5000 } },
+  } as any
+  const nextKnowledgeRead = {
+    ...firstKnowledgeRead, id: 'next-knowledge-read', payload: { ...firstKnowledgeRead.payload, args: { ...firstKnowledgeRead.payload.args, offset: 20 } },
+  } as any
+  assert.equal(toolDisplayName(firstKnowledgeRead), '读取指定知识文档')
+  assert.equal(toolDisplayName(nextKnowledgeRead), '读取指定知识文档')
+  assert.equal(toolCallSummary(nextKnowledgeRead), '')
+  assert.equal(toolActionLabelKey(firstKnowledgeRead), 'execution.v3.activity.read_files')
+  const uploadedMaterial = {
+    ...items[3], payload: { name: 'document_parse', display_name: '读取材料', args: { artifacts: [{ filename: '服务合同.docx', object_path: 'private/path' }] } },
+  } as any
+  assert.equal(toolDisplayName(uploadedMaterial), '读取材料')
+  assert.equal(toolCallSummary(uploadedMaterial), '服务合同.docx')
+  const unseenTool = {
+    ...items[3], payload: { name: 'mcp_contract_review', display_name: '合同条款检查', args: { source_id: 'private-id', offset: 20, scope: 'organization' } },
+  } as any
+  assert.equal(toolDisplayName(unseenTool), '合同条款检查')
+  assert.equal(toolCallSummary(unseenTool), '')
+  assert.equal(toolDisplayName({ ...unseenTool, payload: { name: 'mcp_contract_review', display_name: 'mcp_contract_review' } }), '')
 }
 
 {

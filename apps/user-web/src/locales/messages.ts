@@ -788,6 +788,9 @@ export const messages = {
   'workflow.preset.fill_table.label': { zh: '填表制表', en: 'Form/Sheet Builder' },
   'workflow.preset.fill_table.placeholder': { zh: '例如：把统计结果填入指定 Excel 或生成结构化明细表。', en: 'e.g. Populate results into designated Excel or structured table.' },
 
+  'workflow.preset.review_check.label': { zh: '校验复核', en: 'Review Check' },
+  'workflow.preset.review_check.placeholder': { zh: '例如：依据审核规则逐项核对合同条款，列出风险、缺失项和无法确认的事项。', en: 'e.g. Check contract clauses against each review rule and list risks, gaps, and uncertainties.' },
+
   'workflow.preset.export_deliverable.label': { zh: '导出交付', en: 'Export Deliverable' },
   'workflow.preset.export_deliverable.short': { zh: '导出', en: 'Export' },
   'workflow.preset.export_deliverable.title': { zh: '导出交付文件', en: 'Export Deliverable File' },

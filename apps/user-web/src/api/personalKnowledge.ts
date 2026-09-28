@@ -33,6 +33,18 @@ export async function fetchPersonalKnowledge(view: 'mine' | 'shared', directoryI
 export async function fetchPersonalKnowledgeItem(id: string) {
   return dataOf<PersonalKnowledge>(await api.get(`/personal-knowledge/${encodeURIComponent(id)}`))
 }
+export async function searchSelectablePersonalKnowledge(
+  view: 'mine' | 'shared', directoryId = 'all', keyword = '', page = 1, pageSize = 20,
+) {
+  return dataOf<{ items: PersonalKnowledge[]; total: number; page: number; pageSize: number }>(
+    await api.get('/personal-knowledge/selection', { params: { view, directoryId, keyword, page, pageSize } }),
+  )
+}
+export async function fetchSelectablePersonalKnowledgeItem(id: string) {
+  return dataOf<PersonalKnowledge>(
+    await api.get(`/personal-knowledge/selection/${encodeURIComponent(id)}`),
+  )
+}
 export async function uploadPersonalKnowledge(files: File[], directoryId = '', tags = '', onProgress?: (value: number) => void) {
   const form = new FormData()
   files.forEach(file => form.append('files', file))

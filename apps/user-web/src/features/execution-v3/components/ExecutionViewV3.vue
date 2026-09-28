@@ -7,7 +7,7 @@ import ProvisionalAssistantItem from './ProvisionalAssistantItem.vue'
 import ActivityItem from './ActivityItem.vue'
 import RepeatedToolCallGroup from './RepeatedToolCallGroup.vue'
 import { hasVisibleActiveRunningLeaf, runningContainerIds } from '../domain/activityPresentation'
-import { collapseRepeatedToolCalls, latestToolGroupKey } from '../domain/repeatedToolCalls'
+import { collapseRepeatedToolCalls } from '../domain/repeatedToolCalls'
 import { elapsedRunMs, formatRunDuration } from '../domain/runTiming'
 
 const props = defineProps<{ store: ExecutionStoreV3; live?: boolean }>()
@@ -31,10 +31,8 @@ const rows = computed(() => {
 })
 const passiveRunningIds = computed(() => runningContainerIds(rows.value))
 const timeline = computed(() => collapseRepeatedToolCalls(rows.value))
-const liveToolGroupKey = computed(() => props.live ? latestToolGroupKey(timeline.value) : null)
 const showIdlePlaceholder = computed(
   () => Boolean(props.live)
-    && !liveToolGroupKey.value
     && !hasVisibleActiveRunningLeaf(rows.value, passiveRunningIds.value),
 )
 const terminalWithoutAnswer = computed(
@@ -106,7 +104,6 @@ function toggle() {
           v-if="entry.type === 'tool-group'"
           :items="entry.items"
           :status-items="entry.statusItems"
-          :live="entry.key === liveToolGroupKey"
         />
         <CommentaryItem v-else-if="entry.item.kind === 'commentary'" :item="entry.item" />
         <ProvisionalAssistantItem v-else-if="entry.item.kind === 'final_answer'" :item="entry.item" />

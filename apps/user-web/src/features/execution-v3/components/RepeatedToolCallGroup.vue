@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ExecutionItemV3 } from '../domain/model'
-import { toolActionLabelKey, toolCallSummary, toolCapabilityKeys } from '../domain/repeatedToolCalls'
+import { toolActionLabelKey, toolCallSummary, toolDisplayName } from '../domain/repeatedToolCalls'
 import { t } from '../../../composables/i18n'
 import ActivityIcon from './ActivityIcon.vue'
 
-const props = defineProps<{ items: ExecutionItemV3[]; statusItems: ExecutionItemV3[]; live?: boolean }>()
+const props = defineProps<{ items: ExecutionItemV3[]; statusItems: ExecutionItemV3[] }>()
 const expanded = ref(false)
 const hasFailure = computed(() => props.statusItems.some(item => item.status === 'failed'))
 const isRunning = computed(() => props.statusItems.some(item => item.status === 'running'))
-const showsProgress = computed(() => !hasFailure.value && (isRunning.value || Boolean(props.live)))
-const label = computed(() => toolCapabilityKeys(props.items).map(key => t(key)).join(t('execution.v3.activity_separator')))
+const showsProgress = computed(() => !hasFailure.value && isRunning.value)
+const itemLabel = (item: ExecutionItemV3) => toolDisplayName(item) || t(toolActionLabelKey(item))
+const label = computed(() => [...new Set(props.items.map(itemLabel))].join(t('execution.v3.activity_separator')))
 
 function syncExpanded(event: Event) {
   expanded.value = Boolean((event.currentTarget as HTMLDetailsElement).open)
@@ -28,7 +29,7 @@ function syncExpanded(event: Event) {
     <ol>
       <li v-for="item in items" :key="item.id" :class="`status-${item.status}`">
         <ActivityIcon category="tool" kind="tool" />
-        <span class="tool-call-name">{{ t(toolActionLabelKey(item)) }}</span>
+        <span class="tool-call-name">{{ itemLabel(item) }}</span>
         <span class="tool-call-summary">{{ toolCallSummary(item) || t('execution.v3.tool_call_completed') }}</span>
         <span v-if="item.status === 'failed'" class="repeated-tool-error">{{ String(item.payload?.error || t('ui.failed')) }}</span>
       </li>

@@ -23,6 +23,7 @@ INTERNAL_CAPABILITY_REQUIREMENTS = {
     "image.generate@v1": "image_generation",
     "browser.task@v1": "browser_automation",
     "knowledge.search@v1": "internal_knowledge",
+    "knowledge.read_document@v1": "internal_knowledge",
 }
 
 

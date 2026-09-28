@@ -4,7 +4,7 @@ import type { ExecutionItemV3 } from '../domain/model'
 import { t } from '../../../composables/i18n'
 import ActivityIcon from './ActivityIcon.vue'
 import { activityOutcome, activityStateMessageKey } from '../domain/activityPresentation'
-import { toolActionLabelKey, toolCallSummary } from '../domain/repeatedToolCalls'
+import { toolActionLabelKey, toolCallSummary, toolDisplayName } from '../domain/repeatedToolCalls'
 
 const props = withDefaults(defineProps<{ item: ExecutionItemV3; active?: boolean }>(), {
   active: true,
@@ -37,7 +37,7 @@ const text = computed(() => {
     return String(payload.label || '')
   }
   if (props.item.kind === 'tool') {
-    return t(toolActionLabelKey(props.item))
+    return toolDisplayName(props.item) || t(toolActionLabelKey(props.item))
   }
   if (props.item.kind === 'subagent') return String(payload.goal || payload.summary || '')
   if (props.item.kind === 'approval') {

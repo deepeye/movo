@@ -12,6 +12,7 @@ from app.core.db import get_db
 from app.services.personal_knowledge.access import GRANT_COLLECTION
 from app.services.personal_knowledge.lifecycle_client import knowledge_lifecycle_client
 from app.services.personal_knowledge.inactive_access import PersonalKnowledgeInactiveAccessService
+from app.services.personal_knowledge.document_selection import search_selectable_documents, selectable_document
 from app.services.personal_knowledge.service import DIRECTORY_COLLECTION, PersonalKnowledgeService
 
 
@@ -156,6 +157,34 @@ async def upload_resources(files: list[UploadFile] = File(...), directoryId: str
         finally:
             await file.close()
     return _response({"items": results})
+
+
+@router.get("/personal-knowledge/selection")
+async def list_selectable_resources(
+    view: str = Query(default="mine", pattern="^(mine|shared)$"),
+    directoryId: str = "all", keyword: str = "",
+    page: int = Query(default=1, ge=1),
+    pageSize: int = Query(default=20, ge=1, le=100),
+    principal: ApiPrincipal = Depends(require_end_user_principal),
+):
+    result = await search_selectable_documents(
+        main_id=principal.main_id, user_id=principal.user_id, view=view,
+        directory_id=directoryId, keyword=keyword, page=page, page_size=pageSize,
+    )
+    return _response(result)
+
+
+@router.get("/personal-knowledge/selection/{resource_id}")
+async def get_selectable_resource(
+    resource_id: str, principal: ApiPrincipal = Depends(require_end_user_principal),
+):
+    try:
+        result = await selectable_document(
+            main_id=principal.main_id, user_id=principal.user_id, resource_id=resource_id,
+        )
+    except Exception as exc:
+        _raise(exc)
+    return _response(result)
 
 
 @router.get("/personal-knowledge/{resource_id}")

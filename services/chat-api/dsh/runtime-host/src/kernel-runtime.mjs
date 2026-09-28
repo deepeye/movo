@@ -16,6 +16,7 @@ import { RuntimeTemporalContext } from './runtime-temporal-context.mjs'
 import { RuntimeTurnContext } from './runtime-turn-context.mjs'
 import { OfficialDshHostComposition } from './official-host/composition.mjs'
 import { compatibleSessionEvents } from './official-host/event-compat.mjs'
+import { LiveAssistantStream } from './official-host/live-assistant-stream.mjs'
 import { ASKAI_ENTERPRISE_PRESET_ID } from './official-host/overlay.mjs'
 import { currentPermissionPreset, normalizePersistedPreset } from './official-host/api-compat.mjs'
 import { OfficialSessionComposer, enterpriseToolNames } from './official-host/session-composer.mjs'
@@ -37,6 +38,7 @@ export class KernelRuntime {
   #ctx
   #handles = new Map()
   #journal = new EventJournal()
+  #liveAssistantStream = new LiveAssistantStream(this.#journal)
   #plugins
   #modelAdapter
   #modelAdapterDispose
@@ -110,10 +112,11 @@ export class KernelRuntime {
     })
     this.#workspaces = new DshWorkspaceService(ctx.workspaceRegistry)
 
+    ctx.on('agent/assistant-stream', ({ agent, frame }) => {
+      this.#liveAssistantStream.observeFrame(agent.id, frame)
+    }, { global: true })
     ctx.on('session/event', (session, event) => {
-      for (const compatible of compatibleSessionEvents(event)) {
-        this.#journal.append(session.id, compatible.type, compatible.data, compatible.seq ?? event.seq)
-      }
+      this.#liveAssistantStream.observeSessionEvent(session, event)
       const selection = this.#skillInvocations.observe(session.id, event)
       if (selection !== undefined) this.#journal.append(session.id, 'skill/selected', selection)
     }, { global: true })
@@ -296,6 +299,7 @@ export class KernelRuntime {
     this.#desktopApprovals.clearSession(sessionId)
     await handle.agent.whenIdle()
     await handle.dispose()
+    this.#liveAssistantStream.remove(sessionId)
     this.#journal.remove(sessionId)
     return { disposed: true }
   }
@@ -324,6 +328,7 @@ export class KernelRuntime {
       this.#handles.delete(sessionId)
       handle.agent.cancel({ kind: 'disposed' })
       await handle.dispose()
+      this.#liveAssistantStream.remove(sessionId)
     }
     this.#modelAdapterDispose?.()
     this.#desktopApprovals?.dispose()

@@ -12,11 +12,14 @@ _INTERNAL_DOCUMENT_FIELDS = {"structured_content"}
 def _public_document(value: Any) -> Any:
     if not isinstance(value, dict):
         return value
-    return {
+    projected = {
         key: deepcopy(nested)
         for key, nested in value.items()
         if key not in _INTERNAL_DOCUMENT_FIELDS
     }
+    if projected.get("inline_markdown") == projected.get("markdown"):
+        projected.pop("inline_markdown", None)
+    return projected
 
 
 def public_document_parse_result(result: dict[str, Any]) -> dict[str, Any]:
@@ -26,12 +29,14 @@ def public_document_parse_result(result: dict[str, Any]) -> dict[str, Any]:
     the DSH-facing contract. Docling's internal tree is intentionally private:
     it is large and contains JSON-reference keys such as ``$ref``.
     """
+    parsed = [_public_document(item) for item in list(result.get("parsed_documents") or [])]
     projected = {
         key: deepcopy(nested)
         for key, nested in result.items()
-        if key not in {"parsed_documents", "documents"}
+        if key not in {"parsed_documents", "documents", "active_document_markdown"}
     }
-    parsed = [_public_document(item) for item in list(result.get("parsed_documents") or [])]
+    if not parsed:
+        projected["active_document_markdown"] = str(result.get("active_document_markdown") or "")
     projected["parsed_documents"] = parsed
     raw_documents = result.get("documents")
     documents = (

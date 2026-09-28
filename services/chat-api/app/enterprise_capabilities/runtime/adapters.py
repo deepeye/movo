@@ -6,6 +6,7 @@ from typing import Any
 
 from app.enterprise_capabilities.data import MetricsEngine, run_script
 from app.enterprise_capabilities.artifacts import artifact_export, document_fill, document_transform, table_generate
+from app.enterprise_capabilities.docx_review import document_annotate, document_review_source
 from app.enterprise_capabilities.artifacts.references import require_owned_artifacts
 from app.enterprise_capabilities.artifacts.document_result import public_document_parse_result
 from app.enterprise_capabilities.artifacts.resource_result import (
@@ -44,6 +45,8 @@ from app.enterprise_capabilities.evidence import (
     build_knowledge_evidence_bundle,
     public_capability_evidence,
 )
+from app.enterprise_capabilities.knowledge.document_reader import read_knowledge_document
+from app.enterprise_capabilities.knowledge.document_evidence import build_knowledge_document_evidence
 
 from .contracts import CapabilityExecutionContext
 from .registry import CapabilityHandlerRegistry
@@ -110,6 +113,23 @@ async def knowledge_search(arguments: dict[str, Any], context: CapabilityExecuti
         payload["evidence_bundle"] = public_capability_evidence(bundle)
         payload["_execution_evidence_bundle"] = bundle
     return payload
+
+
+async def knowledge_read_document(arguments: dict[str, Any], context: CapabilityExecutionContext) -> dict[str, Any]:
+    result = await read_knowledge_document(
+        tenant_id=context.tenant_id,
+        user_id=context.user_id,
+        scope=str(arguments.get("scope") or ""),
+        source_id=str(arguments.get("source_id") or ""),
+        offset=int(arguments.get("offset") or 0),
+        char_offset=int(arguments.get("char_offset") or 0),
+        max_chars=int(arguments.get("max_chars") or 5000),
+    )
+    bundle = build_knowledge_document_evidence(result)
+    if bundle:
+        result["evidence_bundle"] = public_capability_evidence(bundle)
+        result["_execution_evidence_bundle"] = bundle
+    return result
 
 
 async def document_parse(arguments: dict[str, Any], context: CapabilityExecutionContext) -> dict[str, Any]:
@@ -287,8 +307,11 @@ async def compute_metrics(arguments: dict[str, Any], context: CapabilityExecutio
 def build_default_registry() -> CapabilityHandlerRegistry:
     registry = CapabilityHandlerRegistry()
     registry.register("knowledge.search@v1", knowledge_search)
+    registry.register("knowledge.read_document@v1", knowledge_read_document)
     registry.register("skills.install_skillhub@v1", skillhub_install)
     registry.register("document.parse@v1", document_parse)
+    registry.register("document.review_source@v1", document_review_source)
+    registry.register("document.annotate@v1", document_annotate)
     registry.register("document.extract_resources@v1", document_extract_resources)
     registry.register("document.pdf_retain_pages@v1", pdf_retain_pages)
     registry.register("vision.extract_facts@v1", image_extract_facts)
