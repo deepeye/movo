@@ -18,6 +18,7 @@ class ModelGatewayClaims:
     model_instance_id: str
     issued_at: int
     expires_at: int
+    user_id: str = ""
 
 
 class ModelGatewayTokenService:
@@ -29,13 +30,14 @@ class ModelGatewayTokenService:
         self._key = hashlib.sha256(secret.encode("utf-8")).digest()
         self._ttl_seconds = ttl_seconds
 
-    def issue(self, *, tenant_id: str, profile_version: str, model_instance_id: str) -> str:
+    def issue(self, *, tenant_id: str, profile_version: str, model_instance_id: str, user_id: str = "") -> str:
         now = int(time.time())
         payload = {
             "aud": "askai-model-gateway",
             "tenant_id": tenant_id,
             "profile_version": profile_version,
             "model_instance_id": model_instance_id,
+            "user_id": user_id,
             "iat": now,
             "exp": now + self._ttl_seconds,
             "jti": secrets.token_hex(8),
@@ -64,6 +66,7 @@ class ModelGatewayTokenService:
             model_instance_id=str(payload["model_instance_id"]),
             issued_at=int(payload["iat"]),
             expires_at=int(payload["exp"]),
+            user_id=str(payload.get("user_id") or ""),
         )
 
     @staticmethod

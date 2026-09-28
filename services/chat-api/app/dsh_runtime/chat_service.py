@@ -1,5 +1,9 @@
 """Application use case for the formal DSH-backed ASKAI Chat API."""
 
+# allow: SIZE_OK — the plan pins this file as the todo-13/14 seam (the DSH
+# turn admission and the run-initiator continuation address it by line
+# number); a split is a later todo's decision, not todo 13's.
+
 from __future__ import annotations
 
 import asyncio
@@ -9,9 +13,13 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import uuid4
 
+from pymongo.errors import DuplicateKeyError
+
+from app.core.db import get_db
 from app.dsh_runtime.bindings import BindingReplacementConflict, KernelBindingRepository
 from app.dsh_runtime.contracts import CancelSessionRequest
 from app.dsh_runtime.conversation import ConversationRepository
+from app.dsh_runtime.conversation.participants_repository import SessionParticipantsRepository
 from app.dsh_runtime.events import KernelEventRepository
 from app.dsh_runtime.events.live_stream import LiveTurnStream
 from app.dsh_runtime.events.projection_writer import ProjectionScope
@@ -133,9 +141,14 @@ class DshChatService:
             turn_context["selected_writing_skill_id"] = str(selected_writing_skill_id)
         if selected_skill_id:
             turn_context["selected_skill_id"] = str(selected_skill_id)
+        # Server-built turn metadata (plan todo 14): the turn's initiator is
+        # recorded here — never copied from ChatRequest — and travels with the
+        # claimed turn (claim_turn) for the approval stamp and the
+        # initiator-only cancel. Absent means "unknown" and fails closed.
         turn_metadata = {
             "language": "zh" if locale.startswith("zh") else "en",
             "locale": locale,
+            "initiator_user_id": user_id,
         }
         turn_context["language"] = turn_metadata["language"]
         # This argument is only supplied by internal authenticated endpoints
@@ -145,8 +158,23 @@ class DshChatService:
             if isinstance(browser_resume, dict):
                 turn_context["browser_resume"] = dict(browser_resume)
         binding: dict[str, Any] | None = None
+        other_member = False
         if conversation_id:
-            await self._conversations.owned(conversation_id, tenant_id=tenant_id, user_id=user_id)
+            # Turn admission (session-sharing plan todo 13): owner-or-ACTIVE-
+            # participant, using T6's membership semantics — the session
+            # doc's user_id (owner) OR an active session_participants row.
+            # Everyone else is invisible (LookupError -> 404), never 403.
+            is_owner = True
+            try:
+                await self._conversations.owned(conversation_id, tenant_id=tenant_id, user_id=user_id)
+            except LookupError:
+                is_owner = False
+                if not await SessionParticipantsRepository(get_db()).is_member(
+                    conversation_id, tenant_id=tenant_id, user_id=user_id
+                ):
+                    raise
+                # A participant speaker always has another member: the owner.
+                other_member = True
             binding = await self._bindings.current(conversation_id, tenant_id=tenant_id, user_id=user_id)
             if binding is None:
                 # Conversations created before the DSH cut-over (and empty
@@ -160,15 +188,37 @@ class DshChatService:
                     model_instance_id=model_instance_id,
                     activate=False,
                 )
-                binding = await self._coordinator.create_binding(
-                    tenant_id=tenant_id,
-                    user_id=user_id,
-                    conversation_id=conversation_id,
-                    profile_version=profile.profile_version,
-                    model_instance_id=profile.model_instance_id,
-                )
+                try:
+                    binding = await self._coordinator.create_binding(
+                        tenant_id=tenant_id,
+                        user_id=user_id,
+                        conversation_id=conversation_id,
+                        profile_version=profile.profile_version,
+                        model_instance_id=profile.model_instance_id,
+                    )
+                except DuplicateKeyError:
+                    # Two concurrent first turns on a never-bound conversation
+                    # (a shared session): the partial unique index admits
+                    # exactly one creator; the loser's kernel session is
+                    # disposed by the coordinator's except-handler — re-resolve
+                    # the winner's binding once instead of surfacing a 500.
+                    binding = await self._bindings.current(
+                        conversation_id, tenant_id=tenant_id, user_id=user_id
+                    )
+                    if binding is None:
+                        raise
             if str(binding.get("execution_location") or "server") != "server":
                 raise ValueError("this Code task must continue on its bound desktop Runtime")
+            if is_owner and model_instance_id is None:
+                # Q11 [review-3] (session-sharing plan todo 13): the
+                # predecessor's-model restriction applies only when the
+                # conversation has another active member — only the
+                # no-explicit-model turn consumes it. An admitted participant
+                # speaker always has the owner as that other member
+                # (other_member is already True above).
+                other_member = bool(await SessionParticipantsRepository(get_db()).list(
+                    conversation_id, tenant_id=tenant_id,
+                ))
             active_status = str((binding.get("active_turn") or {}).get("status") or "")
             if active_status and active_status not in {"completed", "failed", "cancelled"}:
                 binding = await self._terminal_recovery.recover(binding)
@@ -183,12 +233,32 @@ class DshChatService:
                     )
             if active_status and active_status not in {"completed", "failed", "cancelled"}:
                 raise ConversationBusyError("another DSH turn is already running for this Conversation")
-            try:
-                binding = (await self._profile_sync.synchronize(
-                    binding,
+            sync_model_id = model_instance_id
+            if other_member and model_instance_id is None:
+                # Q11 [review-3] (session-sharing plan todo 13): with another
+                # active member, a no-explicit-model turn resolves to the
+                # speaker's own effective default (the tenant catalog default
+                # — no user-level default model exists), never the
+                # predecessor's previous_model_id fallback in the synchronizer.
+                speaker_default = await self._profiles.compile_model_profile(
                     tenant_id=tenant_id,
                     user_id=user_id,
-                    model_instance_id=model_instance_id,
+                    model_instance_id=None,
+                )
+                sync_model_id = speaker_default.model_instance_id
+            try:
+                binding = (await self._profile_sync.synchronize(
+                    # The successor binding must carry the SPEAKER's identity
+                    # (plan todo 13 / R1=A): synchronizer.synchronize takes no
+                    # speaker/preset argument, so the speaker is threaded
+                    # through the existing call path — injected here, carried
+                    # through restore(), read by rotate_binding. The chat
+                    # path's speaker preset is the server default
+                    # create_binding resolves.
+                    {**binding, "speaker_user_id": user_id, "speaker_preset_id": "askai-enterprise"},
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    model_instance_id=sync_model_id,
                 )).binding
             except BindingReplacementConflict as exc:
                 raise ConversationBusyError(
@@ -347,7 +417,7 @@ class DshChatService:
         )
         if message is None:
             raise LookupError("message_not_found")
-        binding = await self._bindings.by_message(message_id, tenant_id=tenant_id, user_id=user_id)
+        binding = await self._bindings.by_message(message_id, tenant_id=tenant_id)
         if binding and str((binding.get("active_turn") or {}).get("status")) == "running":
             try:
                 binding = await self._coordinator.restore(binding)
@@ -389,22 +459,25 @@ class DshChatService:
 
     async def dispose_conversation(self, conversation_id: str, *, tenant_id: str, user_id: str) -> None:
         await self._conversations.owned(conversation_id, tenant_id=tenant_id, user_id=user_id)
-        binding = await self._bindings.current(conversation_id, tenant_id=tenant_id, user_id=user_id)
-        if binding is None:
-            return
-        try:
-            binding = await self._coordinator.restore(binding)
-            if str((binding.get("active_turn") or {}).get("status")) == "running":
-                await self._gateway.cancel(
-                    CancelSessionRequest(
-                        session_id=str(binding["kernel_session_id"]), cause="conversation_deleted"
+        # Conversation-scoped dispose (session-sharing plan todo 12): every
+        # binding row for the conversation is disposed, not just the
+        # owner-scoped current() one — belt-and-suspenders, since rotation
+        # predecessors are already disposed by profile/synchronizer.py.
+        bindings = await self._bindings.list_for_conversation(conversation_id, tenant_id=tenant_id)
+        for binding in bindings:
+            try:
+                binding = await self._coordinator.restore(binding)
+                if str((binding.get("active_turn") or {}).get("status")) == "running":
+                    await self._gateway.cancel(
+                        CancelSessionRequest(
+                            session_id=str(binding["kernel_session_id"]), cause="conversation_deleted"
+                        )
                     )
-                )
-            await self._gateway.dispose_session(str(binding["kernel_session_id"]))
-        except Exception:
-            await self._bindings.mark_disposed(str(binding["binding_id"]), pending=True)
-            return
-        await self._bindings.mark_disposed(str(binding["binding_id"]))
+                await self._gateway.dispose_session(str(binding["kernel_session_id"]))
+            except Exception:
+                await self._bindings.mark_disposed(str(binding["binding_id"]), pending=True)
+                continue
+            await self._bindings.mark_disposed(str(binding["binding_id"]))
 
     async def shutdown(self) -> None:
         tasks = list(self._tasks.values())

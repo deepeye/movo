@@ -130,23 +130,45 @@ class KernelBindingRepository:
         return row
 
     async def current(self, conversation_id: str, *, tenant_id: str, user_id: str) -> dict[str, Any] | None:
+        # Conversation-scoped (session-sharing plan todo 13): the partial
+        # unique index keeps ONE current binding per conversation, so every
+        # member resolves the same binding — a participant never attempts
+        # create_binding on a bound conversation, and recovery/finalize find
+        # a rotated successor even when its user_id is another speaker's.
+        # user_id stays in the signature for call-shape compatibility with
+        # the existing runtime callers, but no longer scopes the read.
         return await self._collection.find_one(
             {
                 "conversation_id": conversation_id,
                 "tenant_id": tenant_id,
-                "user_id": user_id,
                 "current": True,
             }
         )
 
-    async def by_message(self, message_id: str, *, tenant_id: str, user_id: str) -> dict[str, Any] | None:
+    async def by_message(self, message_id: str, *, tenant_id: str) -> dict[str, Any] | None:
+        # Conversation-scoped: the write stamps attribute a binding to its
+        # author, but any member's poll must find it so the terminal/crash
+        # recovery (ingest_once) runs for every member of the conversation
+        # (session-sharing plan todo 7). user_id was dropped from the filter.
         return await self._collection.find_one(
             {
                 "tenant_id": tenant_id,
-                "user_id": user_id,
                 "active_turn.message_id": message_id,
             }
         )
+
+    async def list_for_conversation(self, conversation_id: str, *, tenant_id: str) -> list[dict[str, Any]]:
+        # Conversation-scoped read (session-sharing plan todo 12): every
+        # binding row for the conversation, current or not — the owner-delete
+        # cascade disposes all of them, and the viewer filter must not hide
+        # a rotated binding from the deleter.
+        cursor = self._collection.find(
+            {
+                "tenant_id": tenant_id,
+                "conversation_id": conversation_id,
+            }
+        ).sort("created_at", 1)
+        return [row async for row in cursor]
 
     async def by_kernel_session(
         self, kernel_session_id: str, *, tenant_id: str, user_id: str

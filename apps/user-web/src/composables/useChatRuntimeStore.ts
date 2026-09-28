@@ -1,8 +1,8 @@
 import { computed, reactive, ref } from 'vue'
 import { fetchOrgBilling } from '../api/auth'
 import { uploadChatDocument, uploadChatImage, type UploadedDocument, type UploadedImage } from '../api/chat'
-import { getSession, type ChatMessage, type SessionDetail } from '../api/sessions'
-import { fetchChatMessageEvents, startChatStream, type ChatStreamHandle } from './useChatStream'
+import { getSession, type ChatMessage, type SessionDetail, type SessionSummary } from '../api/sessions'
+import { fetchChatMessageEvents, startChatStream, ChatStreamHttpError, SESSION_ALREADY_RUNNING, type ChatStreamHandle } from './useChatStream'
 import { getLocale, t } from './i18n'
 import { resumeBrowserInterventionTaskUntilSettled } from './tasks/browserInterventionTaskFlow'
 import {
@@ -17,6 +17,7 @@ import { refreshAfterRun } from './chatRuntimeRefresh'
 import { applyAssistantContentEvent } from '../features/execution-v3/domain/assistantContent'
 import type { BrowserAssistanceHandoff } from './browser/useBrowserWorkspace'
 import { stopChatGeneration } from './chatCancellation'
+import { foreignRunForViewer, type ForeignRun } from './sessionRunPresence'
 
 export type RuntimeDocumentInfo = {
   id?: string
@@ -50,6 +51,10 @@ export type RuntimeMessage = {
   _provisionalTextByItem?: Record<string, string>
   _backendSid?: string
   message_id?: string
+  /** Message author (todo 28): the viewer's own user_id on optimistic pushes,
+   *  the author's user_id preserved from session-GET messages by
+   *  normalizeMessages. Absent on legacy/system-shaped messages. */
+  user_id?: string
   execution_events?: any[]
   documents?: RuntimeDocumentInfo[]
   images?: RuntimeImageInfo[]
@@ -100,6 +105,9 @@ export type ChatRuntimePane = {
   runtimePresetId: string
   modelInstanceId: string
   codeProject: { workspace_id: string; git_branch: string; worktree: boolean } | null
+  foreignRun: ForeignRun | null
+  foreignRunFinished: boolean
+  refreshingSession: boolean
 }
 
 type SendInput = {
@@ -109,6 +117,7 @@ type SendInput = {
   knowledgeQaEnabled: boolean
   selectedSkillId?: string
   modelId?: string
+  onRejected?: () => void
   authToken: string | null
   userId: string | null
   mainId: string | null
@@ -122,6 +131,7 @@ type RuntimeCallbacks = {
   onSessionUpdated?: (sessionId: string) => void | Promise<void>
   onQuotaRefresh?: () => void | Promise<void>
   onLoginRequired?: () => void
+  onSessionBusy?: () => void
 }
 
 export type ExternalTurnHandle = {
@@ -162,7 +172,7 @@ function normalizeMessages(raw: ChatMessage[] | RuntimeMessage[] | undefined): R
   const result: RuntimeMessage[] = []
   for (const item of raw) {
     const role = item.role === 'user' ? 'user' : 'assistant'
-    const msg = ensureMessageId({ ...(item as RuntimeMessage), role, content: item.content || '' })
+    const msg = ensureMessageId({ ...(item as RuntimeMessage), role, content: item.content || '', user_id: item.user_id })
     result.push(msg)
   }
   return result
@@ -187,7 +197,20 @@ function createPane(input: { key?: string; sessionId: string | null; messages?: 
     runtimePresetId: 'askai-enterprise',
     modelInstanceId: '',
     codeProject: null,
+    foreignRun: null,
+    foreignRunFinished: false,
+    refreshingSession: false,
   }
+}
+
+function updateForeignRun(pane: ChatRuntimePane, activeRun: SessionSummary['active_run'], viewerUserId: string) {
+  const next = foreignRunForViewer(activeRun, viewerUserId)
+  if (next) {
+    if (pane.foreignRun?.messageId !== next.messageId) pane.foreignRunFinished = false
+  } else if (pane.foreignRun) {
+    pane.foreignRunFinished = true
+  }
+  pane.foreignRun = next
 }
 
 function findPaneByKey(key: string) {
@@ -234,6 +257,13 @@ function clearUnread(sessionId: string | null) {
   state.unreadSessionIds = next
 }
 
+// T30: this in-memory set is the OWNER rows' unread mechanism (App.vue's
+// sessionIsUnread). Shared rows render from the server's shared_unread field
+// via the separate sharedSessions ref and never read this set, so a shared
+// id landing here (a shared pane stopping while inactive) cannot render a
+// dot there. Never wire sessionIsUnread into the shared dot's condition —
+// the set retains the id until clearUnread and would re-render a dot after
+// the server cursor has cleared.
 function markUnread(sessionId: string) {
   if (!sessionId) return
   const next = new Set(state.unreadSessionIds)
@@ -315,6 +345,11 @@ async function sendMessage(key: string, input: SendInput, callbacks: RuntimeCall
   if (!pane) return
   pane.authResumeController?.abort()
   pane.authResumeController = null
+  if (pane.foreignRun || pane.foreignRunFinished) {
+    input.onRejected?.()
+    callbacks.onSessionBusy?.()
+    return
+  }
   if (pane.running) {
     await stopGeneration(key)
     return
@@ -372,6 +407,7 @@ async function sendMessage(key: string, input: SendInput, callbacks: RuntimeCall
     _id: nextMessageId(),
     role: 'user',
     content: text,
+    user_id: input.userId || undefined,
     images: uploadedImages as RuntimeImageInfo[],
     documents: uploadedDocuments,
     created_at: new Date().toISOString(),
@@ -527,7 +563,26 @@ async function sendMessage(key: string, input: SendInput, callbacks: RuntimeCall
       })
     }
   } catch (error: any) {
-    if (error?.name !== 'AbortError') {
+    if (error instanceof ChatStreamHttpError && error.status === 409 && error.code === SESSION_ALREADY_RUNNING) {
+      // Concurrent run holds the session (server 409). Remove BOTH optimistic
+      // bubbles (the pair pushed above), inform the viewer neutrally, and leave
+      // the composer enabled for a later retry — never an error bubble.
+      // message_sequence_conflict and generic failures fall through to the
+      // normal error path below.
+      pane.messages = pane.messages.filter(
+        (item) => item._id !== userMessage._id && item._id !== assistantMsg._id,
+      )
+      input.onRejected?.()
+      callbacks.onSessionBusy?.()
+      if (pane.sessionId && input.userId) {
+        try {
+          const detail = await getSession(pane.sessionId, input.userId, input.mainId || undefined, input.authToken)
+          updateForeignRun(pane, detail.active_run, input.userId)
+        } catch {
+          // The sidebar poll will reconcile the visible run state.
+        }
+      }
+    } else if (error?.name !== 'AbortError') {
       const recovered = await recoverDisconnectedStream().catch(() => false)
       if (!recovered && !ctrl.signal.aborted) {
         const errText = String(error?.message || error || (input.locale === 'zh' ? '请求失败' : 'Request failed'))
@@ -633,6 +688,7 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
     pane.runtimePresetId = detail.runtime_preset_id || 'askai-enterprise'
     pane.modelInstanceId = detail.model_instance_id || ''
     pane.codeProject = detail.code_project || null
+    updateForeignRun(pane, detail.active_run, userId)
     state.panes = [...state.panes, pane]
     setActivePane(pane)
     pruneInactivePanes()
@@ -641,12 +697,19 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
         (item) => item.role === 'assistant' && item.message_id === detail.active_run?.message_id,
       )
       if (assistant) {
+        // Todo 29: the stop control is the composer's running button, shown
+        // only while the pane runs. A foreign run — another member's, or a
+        // legacy run with no recorded initiator — must not offer stop: the
+        // server denies cancel for every non-initiator (403
+        // session_cancel_initiator_required; fail-closed for legacy rows).
+        // The poll below still follows the run's progress for every viewer.
+        const runInitiatorUserId = detail.active_run.initiator_user_id || ''
         const restoredStore = ensureExecV3(assistant)
         pane.activeIntervention = normalizeBrowserIntervention(restoredStore.state.intervention)
         const controller = new AbortController()
         pane.abortController = controller
         pane.activeAssistantMessageId = assistant._id || null
-        setPaneRunning(pane, true)
+        if (runInitiatorUserId === userId) setPaneRunning(pane, true)
         void (async () => {
           const store = restoredStore
           store.resumeLive()
@@ -703,6 +766,28 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
       }
     }
     return pane
+  }
+
+  function syncActiveRuns(summaries: SessionSummary[], viewerUserId: string) {
+    for (const summary of summaries) {
+      const pane = findPaneBySessionId(summary.id)
+      if (pane && !pane.running) updateForeignRun(pane, summary.active_run, viewerUserId)
+    }
+  }
+
+  async function refreshSession(sessionId: string, userId: string, mainId?: string, authToken?: string | null) {
+    const pane = findPaneBySessionId(sessionId)
+    if (!pane || pane.running || pane.refreshingSession) return
+    pane.refreshingSession = true
+    try {
+      const detail = await getSession(sessionId, userId, mainId, authToken)
+      pane.messages = normalizeMessages(detail.messages)
+      updateForeignRun(pane, detail.active_run, userId)
+      pane.foreignRunFinished = false
+      clearUnread(sessionId)
+    } finally {
+      pane.refreshingSession = false
+    }
   }
 
   function removeSession(sessionId: string) {
@@ -787,6 +872,8 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
     reset,
     startLocalSession,
     selectSession,
+    syncActiveRuns,
+    refreshSession,
     removeSession,
     sessionIsRunning,
     sessionIsUnread,

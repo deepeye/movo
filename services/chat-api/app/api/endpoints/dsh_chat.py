@@ -1,21 +1,37 @@
 """Formal Chat API backed exclusively by the DSH runtime application."""
 
+# allow: SIZE_OK — pre-existing oversized endpoint module (466 pure LOC before
+# todo 7); the session-sharing plan pins it as the single-file seam by line
+# number for todos 7/15/17, so a split is a later todo's decision, not T07's.
+
 from __future__ import annotations
 
 import os
 from typing import Any, Literal
 
+from bson import ObjectId
 from fastapi import APIRouter, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.endpoints.auth import _resolve_session_user
 from app.core.config import get_settings
+from app.core.db import get_db
 from app.core.quota_policy import QuotaExceededError, assert_quota_available
 from app.core.tenant import resolve_main_id
 from app.dsh_runtime.application import dsh_runtime_application
 from app.dsh_runtime.chat_service import ConversationBusyError
+from app.dsh_runtime.conversation import ConversationRepository
+from app.dsh_runtime.conversation.participants_repository import (
+    SessionParticipantsRepository,
+)
+from app.dsh_runtime.conversation.repository import MessageSequenceConflict
 from app.dsh_runtime.errors import DshRuntimeError
+from app.dsh_runtime.turn_cancellation import (
+    CancelNotAllowedError,
+    assert_run_initiator,
+    member_conversation,
+)
 from app.utils.oss_uploader import AliyunOSSUploader
 from app.utils.uploads import read_upload_with_limit
 from app.dsh_runtime.desktop_binding import DesktopSessionIdentity
@@ -216,6 +232,11 @@ async def _start_chat_completions(
             status_code=403,
             detail={"code": "model_access_denied", "message": str(exc)},
         ) from exc
+    except MessageSequenceConflict as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": exc.code, "message": str(exc), "session_id": exc.conversation_id},
+        ) from exc
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -407,6 +428,19 @@ async def desktop_conversation_runtime_rebind(
     authorization: str | None = Header(default=None),
 ) -> ApiResponse:
     tenant_id, user_id, _ = await _identity(authorization)
+    if await SessionParticipantsRepository(get_db()).list(conversation_id, tenant_id=tenant_id):
+        # Session-sharing plan todo 17: rebinding to a desktop Runtime while
+        # the conversation has an active participant would strand them - their
+        # turns fail the non-server rejection (ValueError -> 400) and revoke
+        # does not remove existing participants. Refuse (409) instead of the
+        # rejected auto-revoke alternative.
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "session_shared_rebind_blocked",
+                "message": "This conversation has active participants and cannot be rebound to a desktop Runtime",
+            },
+        )
     try:
         await dsh_runtime_application.require_desktop_bindings().rebind_runtime(
             tenant_id=tenant_id, user_id=user_id, device_id=payload.device_id,
@@ -460,6 +494,38 @@ async def desktop_turn_cancel(
     return ApiResponse(code=0, message="ok", data=data)
 
 
+async def _member_message(*, tenant_id: str, user_id: str, message_id: str) -> dict[str, Any] | None:
+    """Resolve the polled message when the viewer is a conversation member.
+
+    Membership = the conversation owner OR an active participant row
+    (session-sharing plan todo 7; the owner never gets a participant row).
+    Any other viewer - non-member, removed member, cross-tenant - cannot see
+    the message at all, so every denial is a 404 at the caller (existence
+    disclosure avoidance, pinned by todo 4's status matrix).
+    """
+    db = get_db()
+    message = await ConversationRepository(db).message(
+        message_id, tenant_id=tenant_id, user_id=user_id
+    )
+    if message is None:
+        return None
+    conversation_id = str(message.get("session_id") or "")
+    if not ObjectId.is_valid(conversation_id):
+        return None
+    session = await db.chat_sessions.find_one(
+        {"_id": ObjectId(conversation_id), "main_id": tenant_id}
+    )
+    if session is None:
+        return None
+    if str(session.get("user_id") or "") == user_id:
+        return message
+    if await SessionParticipantsRepository(db).is_member(
+        conversation_id, tenant_id=tenant_id, user_id=user_id
+    ):
+        return message
+    return None
+
+
 @router.get("/chat/messages/{message_id}/events", response_model=ApiResponse)
 async def chat_message_events(
     message_id: str,
@@ -469,6 +535,8 @@ async def chat_message_events(
 ) -> ApiResponse:
     tenant_id, user_id, _ = await _identity(authorization)
     cursor = max(0, int(after if after_cursor is None else after_cursor))
+    if await _member_message(tenant_id=tenant_id, user_id=user_id, message_id=message_id) is None:
+        raise HTTPException(status_code=404, detail="message_not_found")
     try:
         data = await dsh_runtime_application.require_chat().snapshot(
             message_id,
@@ -481,12 +549,48 @@ async def chat_message_events(
     return ApiResponse(code=0, message="ok", data=data)
 
 
+async def _require_cancel_initiator(*, tenant_id: str, user_id: str, conversation_id: str) -> None:
+    """Session-sharing plan todo 15: cancel is initiator-only, enforced
+    server-side BEFORE the approval-clearing call - require_tools()
+    .cancel_conversation's ActiveCapabilityExecutions bridge cancels every
+    in-flight execution for the conversation regardless of user, so a
+    non-initiator member (the session owner included) must never reach it.
+    Denials: 404 = cannot see (non-member, unknown/malformed id,
+    cross-tenant - the todo-4 status matrix); 403 = can see but is not the
+    run's initiator (a removed member included; a run with no recorded
+    initiator fails closed).
+    """
+    db = get_db()
+    try:
+        conversation = await member_conversation(
+            db,
+            SessionParticipantsRepository(db),
+            conversation_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+        assert_run_initiator(conversation, conversation_id=conversation_id, user_id=user_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="session_not_found") from exc
+    except CancelNotAllowedError as exc:
+        raise HTTPException(
+            status_code=403,
+            detail={"code": exc.code, "message": str(exc), "session_id": exc.conversation_id},
+        ) from exc
+
+
 @router.post("/chat/cancel", response_model=ApiResponse)
 async def chat_cancel(
     payload: CancelRequest,
     authorization: str | None = Header(default=None),
 ) -> ApiResponse:
     tenant_id, user_id, _ = await _identity(authorization)
+    # Session-sharing plan todo 15 (guard-before-try, T17's convention): the
+    # initiator-only gate fires before the approval-clearing call, so a
+    # non-initiator never reaches it.
+    await _require_cancel_initiator(
+        tenant_id=tenant_id, user_id=user_id, conversation_id=payload.session_id
+    )
     try:
         await dsh_runtime_application.require_tools().cancel_conversation(
             tenant_id=tenant_id,
@@ -500,6 +604,13 @@ async def chat_cancel(
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail="session_not_found") from exc
+    except CancelNotAllowedError as exc:
+        # Defense in depth: the coordinator enforces the same initiator-only
+        # gate; a state change between the two checks surfaces here.
+        raise HTTPException(
+            status_code=403,
+            detail={"code": exc.code, "message": str(exc), "session_id": exc.conversation_id},
+        ) from exc
     except DshRuntimeError as exc:
         raise HTTPException(
             status_code=503,

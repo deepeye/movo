@@ -117,6 +117,9 @@ class DshTurnRunner:
                 user_id=str(binding["user_id"]),
                 message_id=message_id,
             )
+            # Refresh before the first model call so a long-lived Runtime uses
+            # the current speaker-scoped credential for usage attribution.
+            await credential_lease.refresh_now()
             await self._gateway.send(
                 SendRequest(
                     session_id=str(binding["kernel_session_id"]),

@@ -245,7 +245,7 @@
             </div>
           </div>
           <div v-else class="empty-chat-state">
-            {{ t('暂无聊天记录') }}
+            {{ t('该调用未关联到可展示的对话消息') }}
           </div>
         </n-spin>
       </n-drawer-content>
@@ -349,7 +349,7 @@ async function showPayloadDetails(row: TokenStatsItem) {
   payloadLoading.value = true;
   payloadVisible.value = true;
   try {
-    const data = await fetchSessionChatHistory(row.requestId, row.sessionId, row.userRequestId || row.requestId);
+    const data = await fetchSessionChatHistory(row.requestId);
     chatHistory.value = data;
     if (data.title) {
       let titleText = data.title.trim();

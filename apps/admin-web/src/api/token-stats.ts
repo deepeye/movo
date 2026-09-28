@@ -158,11 +158,7 @@ export interface SessionChatHistory {
   messages: ChatMessageItem[];
 }
 
-export async function fetchSessionChatHistory(requestId: string, sessionId?: string, userRequestId?: string): Promise<SessionChatHistory> {
-  const params = {
-    sessionId: sessionId || '',
-    userRequestId: userRequestId || '',
-  };
-  const { data } = await apiClient.get(`/api/analytics/token-usage/${requestId}/chat-history`, { params });
+export async function fetchSessionChatHistory(requestId: string): Promise<SessionChatHistory> {
+  const { data } = await apiClient.get(`/api/analytics/token-usage/${requestId}/chat-history`);
   return data;
 }
