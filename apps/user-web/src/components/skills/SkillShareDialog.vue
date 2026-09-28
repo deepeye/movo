@@ -35,7 +35,7 @@
             <p class="hint">{{ t('skills.share.link_hint') }}</p>
           </template>
           <template v-else>
-            <n-input :value="shareUrl" readonly size="small">
+            <n-input ref="shareLinkInput" :value="shareUrl" readonly size="small">
               <template #suffix><n-button text type="primary" @click="copyLink">{{ t('skills.share.copy') }}</n-button></template>
             </n-input>
             <n-button text type="error" size="tiny" class="revoke-link" :loading="revoking" @click="revoke">{{ t('skills.share.revoke') }}</n-button>
@@ -64,6 +64,7 @@ import { skillShareErrorMessage } from './skillShareErrors'
 const props = defineProps<{ show: boolean; skill: SkillItem | null }>()
 const emit = defineEmits<{ 'update:show': [value: boolean]; shared: [] }>()
 const message = useMessage()
+const shareLinkInput = ref<InstanceType<typeof NInput> | null>(null)
 const selectedIds = ref<string[]>([])
 const members = ref<SkillShareMember[]>([])
 const memberLoading = ref(false)
@@ -154,7 +155,11 @@ async function createLink() {
 
 async function copyLink() {
   try { await copyTextToClipboard(shareUrl.value); message.success(t('skills.share.copied')) }
-  catch { message.error(t('skills.share.copy_failed')) }
+  catch {
+    shareLinkInput.value?.focus()
+    shareLinkInput.value?.select()
+    message.error(t('skills.share.copy_failed'))
+  }
 }
 
 async function revoke() {

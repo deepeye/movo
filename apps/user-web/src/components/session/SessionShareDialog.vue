@@ -11,7 +11,7 @@
           <p class="hint">{{ t('session.share.link_hint') }}</p>
         </template>
         <template v-else>
-          <n-input :value="shareUrl" readonly size="small">
+          <n-input ref="shareLinkInput" :value="shareUrl" readonly size="small">
             <template #suffix><n-button text type="primary" @click="copyLink">{{ t('session.share.copy') }}</n-button></template>
           </n-input>
           <p class="hint">{{ expiryText }}</p>
@@ -23,7 +23,7 @@
         <div class="member-list">
           <div v-for="member in members" :key="member.user_id" class="member-row">
             <div class="member-info">
-              <strong>{{ member.display_name }}</strong>
+              <strong>{{ member.display_name || t('session.share.unknown_member') }}</strong>
               <span>{{ formatJoinedAt(member.joined_at) }}</span>
             </div>
             <div class="member-actions">
@@ -60,6 +60,7 @@ const props = defineProps<{ show: boolean; mode: 'owner' | 'participant'; sessio
 // link changes no header-visible field (the share state is dialog-local).
 const emit = defineEmits<{ 'update:show': [value: boolean]; left: []; removed: []; revoked: [] }>()
 const message = useMessage()
+const shareLinkInput = ref<InstanceType<typeof NInput> | null>(null)
 
 const share = ref<SessionShareCreated | null>(null)
 const shareSessionId = ref<string | null>(null)
@@ -167,7 +168,11 @@ async function createLink() {
 
 async function copyLink() {
   try { await copyTextToClipboard(shareUrl.value); message.success(t('session.share.copied')) }
-  catch { message.error(t('session.share.copy_failed')) }
+  catch {
+    shareLinkInput.value?.focus()
+    shareLinkInput.value?.select()
+    message.error(t('session.share.copy_failed'))
+  }
 }
 
 async function revoke() {

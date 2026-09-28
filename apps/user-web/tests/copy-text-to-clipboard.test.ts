@@ -45,7 +45,21 @@ async function testUnavailableClipboard() {
   await assert.rejects(() => copyTextToClipboard('share-url', {}), /unavailable/)
 }
 
+async function testInsecureContextDoesNotReportLegacyCopyAsSuccess() {
+  let legacyCopyAttempted = false
+  const environment: ClipboardEnvironment = {
+    secureContext: false,
+    document: {
+      body: {},
+      execCommand() { legacyCopyAttempted = true; return true },
+    } as unknown as Document,
+  }
+  await assert.rejects(() => copyTextToClipboard('share-url', environment), /insecure context/)
+  assert.equal(legacyCopyAttempted, false)
+}
+
 await testClipboardApi()
 await testSelectionFallback()
 await testUnavailableClipboard()
+await testInsecureContextDoesNotReportLegacyCopyAsSuccess()
 console.log('copy-text-to-clipboard tests passed')

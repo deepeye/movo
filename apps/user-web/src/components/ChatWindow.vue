@@ -333,7 +333,7 @@ function authorLabel(msg: Message): string {
   const id = msg.user_id || ''
   const known = props.sessionId ? memberNamesBySession.value.get(props.sessionId)?.get(id) : undefined
   const name = known?.trim()
-  return name || id.slice(0, 8)
+  return name || t('session.share.unknown_member')
 }
 
 const foreignRunSpeakerName = computed(() => {
