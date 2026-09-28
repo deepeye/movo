@@ -209,7 +209,7 @@ def test_seeded_duplicate_aborts_startup_with_reported_offending_rows(real_mongo
     assert sample["seq"] == 1
     assert sample["count"] == 2
     assert sorted(sample["message_ids"]) == ["msg-1", "msg-2"]
-    assert "re-sequence" in str(excinfo.value)
+    assert "./movo fix" in str(excinfo.value)
 
     # Aborted means aborted: the index is never created over duplicate data
     # and never skipped silently.
