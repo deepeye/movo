@@ -72,6 +72,22 @@ def test_no_unverified_comments_are_delivered():
     assert rejected[0]["reason"] == "source_block_not_found"
 
 
+def test_english_review_comments_use_english_labels():
+    source = _sample()
+    output, accepted, rejected = annotate_docx(source, [{
+        "source_block_id": "p000001", "source_quote": "fee: 100 units",
+        "criterion_ref": "C-1", "criterion_text": "A fee needs approval",
+        "finding": "The fee is unapproved", "suggested_revision": "Confirm the fee",
+    }], language="en-US")
+    assert output is not None and len(accepted) == 1 and rejected == []
+    with ZipFile(BytesIO(output)) as package:
+        comments = etree.fromstring(package.read("word/comments.xml"))
+    assert [node.text for node in comments.iter(qn("t"))] == [
+        "Issue: The fee is unapproved", "Suggested revision: Confirm the fee",
+        "Review criterion: A fee needs approval", "Rule reference: C-1",
+    ]
+
+
 def test_rule_identifier_alone_cannot_become_a_user_comment():
     source = _sample()
     output, accepted, rejected = annotate_docx(source, [{
@@ -161,6 +177,19 @@ def test_review_tools_use_the_same_authorized_original(monkeypatch):
     assert result["success"] and result["accepted_count"] == 1
     assert uploads[0][1] == "sample_AI审阅.docx"
     assert review_blocks(read_document_xml(uploads[0][0]))[0].text == read["blocks"][0]["text"]
+
+    english_context = context.model_copy(update={
+        "turn_context": {**context.turn_context, "language": "en"},
+    })
+    english_result = asyncio.run(review_service.document_annotate({
+        "artifact": artifact, "source_sha256": read["source_sha256"],
+        "findings": [{"source_block_id": read["blocks"][0]["id"], "source_quote": "fee: 100 units",
+                      "criterion_text": "Pay after acceptance", "finding": "Check fee",
+                      "suggested_revision": "Specify the amount"}],
+    }, english_context))
+    assert english_result["success"] and uploads[1][1] == "sample_AI_reviewed.docx"
+    with ZipFile(BytesIO(uploads[1][0])) as package:
+        assert b"Issue: Check fee" in package.read("word/comments.xml")
 
 
 def test_review_rejects_an_owned_but_not_currently_uploaded_docx(monkeypatch):

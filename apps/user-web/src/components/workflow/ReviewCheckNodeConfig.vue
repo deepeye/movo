@@ -2,59 +2,59 @@
   <section class="review-config" @click.stop>
     <header class="config-heading">
       <span class="heading-icon" aria-hidden="true">✓</span>
-      <div><strong>设置审核方式</strong><p>选定审核对象和依据，系统会输出审核结论</p></div>
+      <div><strong>{{ t('设置审核方式') }}</strong><p>{{ t('选定审核对象和依据，系统会输出审核结论') }}</p></div>
     </header>
 
     <div class="review-grid">
       <div class="review-panel subject-panel">
         <div class="panel-heading">
           <span class="panel-index">01</span>
-          <div><strong>审核什么</strong><small>选择前面步骤得到的材料或结果</small></div>
+          <div><strong>{{ t('审核什么') }}</strong><small>{{ t('选择前面步骤得到的材料或结果') }}</small></div>
         </div>
         <n-select :value="selected('reviewSubjectNodeId', 'reviewSubject')" size="medium" clearable
-          :options="sourceOptions" aria-label="选择审核对象" placeholder="选择审核对象"
+          :options="sourceOptions" :aria-label="t('选择审核对象')" :placeholder="t('选择审核对象')"
           @update:value="(value: string | null) => selectSource('reviewSubjectNodeId', 'reviewSubject', value)" />
       </div>
       <div class="review-panel criteria-panel">
         <div class="panel-heading">
           <span class="panel-index">02</span>
-          <div><strong>拿什么审核</strong><small>引用已有依据，或直接写下规则</small></div>
+          <div><strong>{{ t('拿什么审核') }}</strong><small>{{ t('引用已有依据，或直接写下规则') }}</small></div>
         </div>
-        <div class="mode-switch" role="group" aria-label="依据来源">
+        <div class="mode-switch" role="group" :aria-label="t('依据来源')">
           <button type="button" :class="{ active: criteriaMode === 'upstream' }"
-            :aria-pressed="criteriaMode === 'upstream'" @click="setCriteriaMode('upstream')">已有依据</button>
+            :aria-pressed="criteriaMode === 'upstream'" @click="setCriteriaMode('upstream')">{{ t('已有依据') }}</button>
           <button type="button" :class="{ active: criteriaMode === 'inline' }"
-            :aria-pressed="criteriaMode === 'inline'" @click="setCriteriaMode('inline')">直接输入</button>
+            :aria-pressed="criteriaMode === 'inline'" @click="setCriteriaMode('inline')">{{ t('直接输入') }}</button>
         </div>
         <n-select v-if="criteriaMode === 'upstream'"
           :value="selected('reviewCriteriaNodeId', 'reviewCriteria')" size="medium" clearable
-          :options="sourceOptions" aria-label="选择审核依据" placeholder="选择规则文档或其他上游依据"
+          :options="sourceOptions" :aria-label="t('选择审核依据')" :placeholder="t('选择规则文档或其他上游依据')"
           @update:value="(value: string | null) => selectSource('reviewCriteriaNodeId', 'reviewCriteria', value)" />
-        <n-input v-else :value="String(businessConfig.reviewCriteria || '')" type="textarea" aria-label="输入审核规则"
-          :autosize="{ minRows: 2, maxRows: 5 }" placeholder="例如：金额不得超过预算；缺少验收条款时标记风险"
+        <n-input v-else :value="String(businessConfig.reviewCriteria || '')" type="textarea" :aria-label="t('输入审核规则')"
+          :autosize="{ minRows: 2, maxRows: 5 }" :placeholder="t('例如：金额不得超过预算；缺少验收条款时标记风险')"
           @update:value="setInlineCriteria" />
       </div>
     </div>
 
-    <p v-if="!sourceOptions.length" class="review-hint">请先在上游节点设置输出名，再选择审核对象。</p>
-    <p v-else-if="invalidSelection" class="review-hint">已选节点不在上游，请重新选择。</p>
+    <p v-if="!sourceOptions.length" class="review-hint">{{ t('请先在上游节点设置输出名，再选择审核对象。') }}</p>
+    <p v-else-if="invalidSelection" class="review-hint">{{ t('已选节点不在上游，请重新选择。') }}</p>
 
     <div class="delivery-field">
-      <div class="delivery-heading"><strong>审核结果如何交付</strong><small>原文批注会保留上传 Word 的格式，并生成审阅副本</small></div>
-      <div class="delivery-options" role="group" aria-label="审核结果交付方式">
+      <div class="delivery-heading"><strong>{{ t('审核结果如何交付') }}</strong><small>{{ t('原文批注会保留上传 Word 的格式，并生成审阅副本') }}</small></div>
+      <div class="delivery-options" role="group" :aria-label="t('审核结果交付方式')">
         <button v-for="option in outputOptions" :key="option.value" type="button"
           :class="{ active: outputMode === option.value }" :aria-pressed="outputMode === option.value"
           @click="setOutputMode(option.value)">
-          <strong>{{ option.label }}</strong><small>{{ option.description }}</small>
+          <strong>{{ t(option.label) }}</strong><small>{{ t(option.description) }}</small>
         </button>
       </div>
-      <p v-if="outputMode !== 'report'" class="delivery-hint">仅 DOCX 可生成原文批注；其他格式会输出审核报告。无法准确定位原文的问题不会写入批注。</p>
+      <p v-if="outputMode !== 'report'" class="delivery-hint">{{ t('仅 DOCX 可生成原文批注；其他格式会输出审核报告。无法准确定位原文的问题不会写入批注。') }}</p>
     </div>
 
     <div class="result-field">
       <div class="result-mark" aria-hidden="true">✓</div>
-      <div class="result-copy"><strong>输出审核结论</strong><small>后续步骤可以引用这份结果</small></div>
-      <n-input :value="outputAlias" size="medium" aria-label="审核结论输出名" placeholder="例如：审核结论"
+      <div class="result-copy"><strong>{{ t('输出审核结论') }}</strong><small>{{ t('后续步骤可以引用这份结果') }}</small></div>
+      <n-input :value="outputAlias" size="medium" :aria-label="t('审核结论输出名')" :placeholder="t('例如：审核结论')"
         @update:value="(value: string) => emit('update:outputAlias', value)" />
     </div>
   </section>
@@ -62,6 +62,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { t } from '../../composables/i18n';
 
 type UpstreamOutput = { id: string; alias: string };
 const props = defineProps<{ businessConfig: Record<string, any>; upstreamOutputs: UpstreamOutput[]; outputAlias: string }>();

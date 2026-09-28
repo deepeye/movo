@@ -13,11 +13,15 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
-UNIQUE_MESSAGE_SEQ_INDEX_NAME = "unique_main_session_seq"
+from app.migrations.sequence_index import (
+    MESSAGE_SEQ_INDEX_FILTER,
+    MESSAGE_SEQ_INDEX_KEYS,
+    UNIQUE_MESSAGE_SEQ_INDEX_NAME,
+)
 
 
 class MessageSequenceIndexConflict(RuntimeError):
-    """Pre-existing chat_messages rows duplicate (main_id, session_id, seq).
+    """Valid chat_messages rows duplicate (main_id, session_id, seq).
 
     Startup must abort: the unique per-session sequence index cannot be built
     over duplicate data, and silently skipping the index or de-duplicating
@@ -30,9 +34,9 @@ class MessageSequenceIndexConflict(RuntimeError):
         super().__init__(
             f"cannot create unique index {index_name!r} on chat_messages:"
             " pre-existing rows duplicate (main_id, session_id, seq);"
-            f" sample offending rows: {samples}; aborting startup - run the"
-            " one-time re-sequence pass from the operator runbook"
-            " (session-sharing plan todo 33) and restart"
+            f" sample offending rows: {samples}; upgrade stopped before"
+            " replacing the running service. Run ./movo fix during a"
+            " maintenance window, then ./movo up"
         )
 
 
@@ -77,10 +81,24 @@ class ConversationRepository:
             partialFilterExpression={"share_token_hash": {"$type": "string"}},
             name="unique_main_share_token_hash",
         )
+        existing = (await self._messages.index_information()).get(
+            UNIQUE_MESSAGE_SEQ_INDEX_NAME
+        )
+        if existing and (
+            existing.get("key") == MESSAGE_SEQ_INDEX_KEYS
+            and existing.get("unique") is True
+            and existing.get("partialFilterExpression") in (
+                None, MESSAGE_SEQ_INDEX_FILTER
+            )
+        ):
+            # A pre-existing full unique index enforces a stronger contract.
+            # Reuse it instead of trying to replace it under the same name.
+            return
         try:
             await self._messages.create_index(
-                [("main_id", 1), ("session_id", 1), ("seq", 1)],
+                MESSAGE_SEQ_INDEX_KEYS,
                 unique=True,
+                partialFilterExpression=MESSAGE_SEQ_INDEX_FILTER,
                 name=UNIQUE_MESSAGE_SEQ_INDEX_NAME,
             )
         except OperationFailure:
@@ -97,6 +115,7 @@ class ConversationRepository:
     async def _duplicate_message_seq_samples(self) -> list[dict[str, Any]]:
         cursor = self._messages.aggregate(
             [
+                {"$match": MESSAGE_SEQ_INDEX_FILTER},
                 {
                     "$group": {
                         "_id": {
@@ -105,7 +124,8 @@ class ConversationRepository:
                             "seq": "$seq",
                         },
                         "count": {"$sum": 1},
-                        "message_ids": {"$firstN": {"input": "$message_id", "n": 3}},
+                        "first_message_id": {"$first": "$message_id"},
+                        "last_message_id": {"$last": "$message_id"},
                     }
                 },
                 {"$match": {"count": {"$gt": 1}}},
@@ -121,7 +141,10 @@ class ConversationRepository:
                     "session_id": str(key.get("session_id")),
                     "seq": key.get("seq"),
                     "count": row["count"],
-                    "message_ids": [str(message_id) for message_id in row["message_ids"]],
+                    "message_ids": list(dict.fromkeys(
+                        str(message_id)
+                        for message_id in (row["first_message_id"], row["last_message_id"])
+                    )),
                 }
             )
         return samples

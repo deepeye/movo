@@ -15,6 +15,7 @@ def review_check_guidance(config: dict[str, Any]) -> list[str]:
         lines.append(f"判定依据：{criteria}")
     lines.append("先识别审核对象与依据材料的适用主体、交易角色和适用范围；若规则只覆盖某一角色而当前材料不匹配，先说明不匹配，不得机械套用该角色的规则或生成确定性批注。")
     lines.append("逐项审核并输出结论与简要依据；无法判断时写明无法确认，不得视为通过。")
+    lines.append("审核结论、问题描述和修改建议使用当前用户请求的语言；引用原文与规则时保留来源文字，不要擅自翻译引文。")
     output_mode = str(config.get("outputMode") or "report")
     if output_mode in {"annotated_docx", "both"}:
         lines.extend([

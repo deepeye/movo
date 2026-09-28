@@ -27,10 +27,14 @@ movo_detect_locale
 source "${ROOT_DIR}/deploy/cli/dsh-version.sh"
 # shellcheck source=deploy/cli/images.sh
 source "${ROOT_DIR}/deploy/cli/images.sh"
+# shellcheck source=deploy/cli/migrations.sh
+source "${ROOT_DIR}/deploy/cli/migrations.sh"
 # shellcheck source=deploy/cli/pull.sh
 source "${ROOT_DIR}/deploy/cli/pull.sh"
 # shellcheck source=deploy/cli/backup.sh
 source "${ROOT_DIR}/deploy/cli/backup.sh"
+# shellcheck source=deploy/cli/sequence-fix.sh
+source "${ROOT_DIR}/deploy/cli/sequence-fix.sh"
 
 print_logo() {
   printf '\n'
@@ -173,6 +177,10 @@ command_up() {
   if movo_has_build_flag "$@"; then
     movo_msg starting
     movo_print_dsh_build_target
+    if [[ -n "$(movo_compose ps -q chat-api 2>/dev/null || true)" ]]; then
+      movo_compose build chat-api
+      movo_run_database_upgrade || return 1
+    fi
     if ! movo_compose up -d "$@"; then
       movo_msg start_failed >&2
       movo_compose ps >&2 || true
@@ -183,6 +191,7 @@ command_up() {
     if ! movo_pull_images_serially missing; then
       return 1
     fi
+    movo_upgrade_database_if_running || return 1
     movo_msg starting
     if ! movo_compose up -d --pull never "$@"; then
       movo_msg start_failed >&2
@@ -219,6 +228,7 @@ command_update() {
   MOVO_PULL_POLICY=always
   export MOVO_PULL_POLICY
   movo_pull_images_serially always
+  movo_run_database_upgrade || return 1
   movo_compose up -d --pull never
   refresh_gateway_resolution
   wait_until_ready
@@ -240,6 +250,11 @@ case "${command}" in
     ;;
   update)
     command_update
+    ;;
+  fix)
+    require_docker
+    deployment_urls
+    movo_fix_sequences "$@"
     ;;
   backup)
     require_docker

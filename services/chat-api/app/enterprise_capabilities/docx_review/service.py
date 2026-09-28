@@ -10,6 +10,7 @@ from app.enterprise_capabilities.artifacts.storage import read_owned_artifact, u
 from app.enterprise_capabilities.runtime.contracts import CapabilityExecutionContext
 
 from .annotations import annotate_docx
+from .comment_content import review_language
 from .source import page_blocks, read_document_xml, review_blocks, source_hash
 
 
@@ -58,7 +59,8 @@ async def document_annotate(arguments: dict[str, Any], context: CapabilityExecut
     findings = list(arguments.get("findings") or [])
     if not findings or len(findings) > 100 or any(not isinstance(item, dict) for item in findings):
         raise ValueError("findings must contain 1 to 100 review items")
-    annotated, accepted, rejected = annotate_docx(content, findings)
+    language = review_language(str(context.turn_context.get("language") or "zh"))
+    annotated, accepted, rejected = annotate_docx(content, findings, language=language)
     if annotated is None:
         return {
             "success": False,
@@ -68,7 +70,8 @@ async def document_annotate(arguments: dict[str, Any], context: CapabilityExecut
             "message": "No finding could be anchored to the original DOCX. Produce a review report instead.",
         }
     requested_name = Path(str(arguments.get("filename") or "").strip()).name
-    output_name = requested_name if requested_name.lower().endswith(".docx") else f"{Path(filename).stem}_AI审阅.docx"
+    suffix = "AI_reviewed" if language == "en" else "AI审阅"
+    output_name = requested_name if requested_name.lower().endswith(".docx") else f"{Path(filename).stem}_{suffix}.docx"
     artifact = upload_derived_artifact(
         annotated, context=context, filename=output_name, content_type=DOCX_CONTENT_TYPE,
     )

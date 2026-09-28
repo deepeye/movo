@@ -9,6 +9,7 @@ from pymongo.errors import DuplicateKeyError
 
 from app.dsh_runtime.conversation import ConversationRepository
 from app.dsh_runtime.conversation.repository import (
+    MESSAGE_SEQ_INDEX_FILTER,
     UNIQUE_MESSAGE_SEQ_INDEX_NAME,
     MessageSequenceIndexConflict,
 )
@@ -51,6 +52,44 @@ def test_ensure_indexes_creates_share_and_sequence_indexes(real_mongo_db):
     seq_index = message_indexes[UNIQUE_MESSAGE_SEQ_INDEX_NAME]
     assert seq_index["key"] == [("main_id", 1), ("session_id", 1), ("seq", 1)]
     assert seq_index["unique"] is True
+    assert seq_index["partialFilterExpression"] == MESSAGE_SEQ_INDEX_FILTER
+
+
+def test_legacy_rows_without_tenant_or_sequence_do_not_block_index(real_mongo_db):
+    harness = real_mongo_db
+
+    async def seed():
+        session = await _repo(harness).create(tenant_id=TENANT, user_id="user-1", title="Chat")
+        for _ in range(2):
+            await harness.db.chat_messages.insert_one({
+                "session_id": session["_id"], "seq": 1, "role": "user",
+            })
+        for _ in range(2):
+            await harness.db.chat_messages.insert_one({
+                "session_id": session["_id"], "role": "user",
+            })
+
+    harness.run(seed())
+    harness.run(_repo(harness).ensure_indexes())
+    assert UNIQUE_MESSAGE_SEQ_INDEX_NAME in harness.run(
+        harness.db.chat_messages.index_information()
+    )
+
+
+def test_existing_full_sequence_index_is_reused(real_mongo_db):
+    harness = real_mongo_db
+    harness.run(harness.db.chat_messages.create_index(
+        [("main_id", 1), ("session_id", 1), ("seq", 1)],
+        unique=True,
+        name=UNIQUE_MESSAGE_SEQ_INDEX_NAME,
+    ))
+
+    harness.run(_repo(harness).ensure_indexes())
+    index = harness.run(harness.db.chat_messages.index_information())[
+        UNIQUE_MESSAGE_SEQ_INDEX_NAME
+    ]
+    assert index["unique"] is True
+    assert "partialFilterExpression" not in index
 
 
 def test_never_shared_sessions_do_not_collide_on_the_share_index(real_mongo_db):

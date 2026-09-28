@@ -106,7 +106,7 @@ def _serialize(root: etree._Element) -> bytes:
     return etree.tostring(root, encoding="UTF-8", xml_declaration=True, standalone=True)
 
 
-def annotate_docx(source_bytes: bytes, findings: list[dict]) -> tuple[bytes | None, list[dict], list[dict]]:
+def annotate_docx(source_bytes: bytes, findings: list[dict], *, language: str = "zh") -> tuple[bytes | None, list[dict], list[dict]]:
     """Only exact, unique quotes in a declared source block become comments."""
     root = read_document_xml(source_bytes)
     blocks = {block.id: block for block in review_blocks(root)}
@@ -153,7 +153,7 @@ def annotate_docx(source_bytes: bytes, findings: list[dict]) -> tuple[bytes | No
                     "reason": reason,
                 })
                 continue
-            append_comment(comments, next_id, finding)
+            append_comment(comments, next_id, finding, language=language)
             accepted.append({"index": index, "source_block_id": block_id, "source_quote": quote, "comment_id": next_id})
             next_id += 1
         if not accepted:

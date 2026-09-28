@@ -146,7 +146,7 @@
                                 :loading="toolOptionsLoading"
                                 :options="toolOptions"
                                 class="node-tool-select"
-                                placeholder="选择我的 Tool / MCP"
+                                :placeholder="t('选择我的 Tool / MCP')"
                                 @update:value="(val: any) => handleToolSelect(step, val)"
                               />
                             </div>
@@ -227,12 +227,12 @@
                               @update:output-alias="(value) => step.outputAlias = value"
                             />
                             <div v-if="step.type !== 'read_material' && step.type !== 'review_check'" class="node-description-field">
-                              <div class="node-description-label">输出名（供后续节点引用）</div>
-                              <n-input v-model:value="step.outputAlias" size="small" placeholder="例如：待审合同、审核规则" />
+                              <div class="node-description-label">{{ t('输出名（供后续节点引用）') }}</div>
+                              <n-input v-model:value="step.outputAlias" size="small" :placeholder="t('例如：待审合同、审核规则')" />
                             </div>
                             <details v-if="step.type === 'read_material' || step.type === 'review_check'"
                               class="node-optional-requirement" :open="Boolean(step.text?.trim())" @click.stop>
-                              <summary>补充要求（可选）<span>需要特殊处理时再填写</span></summary>
+                              <summary>{{ t('补充要求（可选）') }}<span>{{ t('需要特殊处理时再填写') }}</span></summary>
                               <n-input v-model:value="step.text" type="textarea"
                                 :autosize="{ minRows: 2, maxRows: 6 }" class="step-input"
                                 :placeholder="t('workflow.preset.' + step.type + '.placeholder')" />
@@ -842,6 +842,7 @@ import { skillSourceLabel } from './skills/skillSourceLabel';
 import { fetchTools, type ExternalToolItem } from '../api/tools';
 import readMaterialIcon from '../assets/workflow-node-icons/read-material.svg?raw';
 import extractInfoIcon from '../assets/workflow-node-icons/extract-info.svg?raw';
+import reviewCheckIcon from '../assets/workflow-node-icons/review-check.svg?raw';
 import extractResourcesIcon from '../assets/workflow-node-icons/extract-resources.svg?raw';
 import understandImageIcon from '../assets/workflow-node-icons/understand-image.svg?raw';
 import computeMetricIcon from '../assets/workflow-node-icons/compute-metric.svg?raw';
@@ -1177,7 +1178,7 @@ const workflowNodeTypes: Array<{
     shortLabel: '复核',
     color: '#b45309',
     bg: '#fffbeb',
-    icon: extractInfoIcon,
+    icon: reviewCheckIcon,
     defaultTitle: '复核上游结果',
     placeholder: '例如：依据审核规则逐项核对合同条款，列出风险、缺失项和无法确认的事项。',
     defaultConfig: {
@@ -1369,11 +1370,17 @@ function createWorkflowNode(type: WorkflowNodeType = 'extract_info', seed: Parti
     ...(meta.defaultConfig || {}),
     ...(seed.businessConfig || {}),
   };
-  const outputAlias = seed.outputAlias || String(businessConfig.outputAlias || '').trim();
+  if (type === 'review_check' && !seed.businessConfig?.outputAlias) {
+    businessConfig.outputAlias = t('复核结果');
+  }
+  const outputAlias = seed.outputAlias || (seed.businessConfig?.outputAlias
+    ? String(businessConfig.outputAlias).trim()
+    : t(String(businessConfig.outputAlias || '')).trim());
+  businessConfig.outputAlias = outputAlias;
   return {
     id: seed.id || createId(),
     type,
-    title: seed.title || meta.defaultTitle,
+    title: seed.title || t(meta.defaultTitle),
     text: seed.text || '',
     businessConfig,
     boundWritingSkillId: seed.boundWritingSkillId || '',

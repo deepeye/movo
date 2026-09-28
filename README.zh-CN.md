@@ -183,6 +183,7 @@ http://localhost:3000/admin/setup
 ./movo logs chat-api
 ./movo restart
 ./movo update
+./movo fix       # 仅在升级提示会话序号冲突时使用；会暂时停止聊天
 ./movo backup /path/on/a/large-disk/movo-backup
 ./movo down       # 停止容器并保留数据
 ./movo down -v    # 确认后永久删除 MOVO 数据

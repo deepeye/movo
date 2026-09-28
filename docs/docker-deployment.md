@@ -60,7 +60,11 @@ To build without starting services:
 ```
 
 `./movo update` pulls the configured image tag and recreates services. Pin a new
-`MOVO_VERSION` before running it. It does not migrate or delete data volumes.
+`MOVO_VERSION` before running it. Both `./movo up` and `./movo update` run
+additive session-sharing index checks before replacing a running chat-api.
+If genuinely duplicated message sequences prevent the index, the old service
+keeps running; use `./movo fix` in a maintenance window to back up and repair
+the affected conversations, then run `./movo up`. No data volumes are deleted.
 
 `./movo down -v` permanently deletes all MOVO data and now requires an explicit
 interactive confirmation. Automation must pass `./movo down -v --yes`.

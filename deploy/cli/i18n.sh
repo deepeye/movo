@@ -19,6 +19,7 @@ movo_usage() {
     printf '  ./movo [--lang zh-CN|en] up [--build]  启动 MOVO 并输出初始化地址\n'
     printf '  ./movo build                          从源码构建 MOVO 镜像\n'
     printf '  ./movo update                         拉取当前版本镜像并更新服务\n'
+    printf '  ./movo fix [--yes]                    备份并修复冲突的会话消息序号\n'
     printf '  ./movo backup [目录]                  停机一致性备份全部 MOVO 数据卷\n'
     printf '  ./movo restore <目录> --yes           校验并恢复 MOVO 数据卷\n'
     printf '  ./movo status                         查看服务状态\n'
@@ -31,6 +32,7 @@ movo_usage() {
     printf '  ./movo [--lang zh-CN|en] up [--build]  Start MOVO and print the setup URL\n'
     printf '  ./movo build                           Build MOVO images from source\n'
     printf '  ./movo update                          Pull current images and update services\n'
+    printf '  ./movo fix [--yes]                     Back up and repair conflicting chat sequences\n'
     printf '  ./movo backup [directory]              Back up all MOVO volumes while stopped\n'
     printf '  ./movo restore <directory> --yes       Verify and restore MOVO volumes\n'
     printf '  ./movo status                          Show service status\n'
@@ -71,6 +73,36 @@ movo_msg() {
     en:building) printf 'Building MOVO images from source...\n' ;;
     zh:updating) printf '正在拉取 MOVO 镜像并更新服务...\n' ;;
     en:updating) printf 'Pulling MOVO images and updating services...\n' ;;
+    zh:upgrading_database) printf '正在自动检查并升级会话分享数据库索引...\n' ;;
+    en:upgrading_database) printf 'Checking and upgrading session-sharing database indexes...\n' ;;
+    zh:upgrade_database_failed) printf '数据库升级未通过；旧服务保持运行，数据未被迁移脚本改写。请检查上方错误。\n' ;;
+    en:upgrade_database_failed) printf 'Database upgrade did not pass; old services remain running and the migration did not rewrite data. Check the error above.\n' ;;
+    zh:fix_confirm) printf '即将停止聊天服务并修改冲突会话的序号。已确认维护窗口后输入 FIX（自动化可用 --yes）：' ;;
+    en:fix_confirm) printf 'This stops chat and changes conflicting sequence metadata. Type FIX to continue (or use --yes): ' ;;
+    zh:fix_tools_missing) printf 'MongoDB 容器缺少 mongodump 或 mongorestore；聊天服务尚未停止。\n' ;;
+    en:fix_tools_missing) printf 'The MongoDB container lacks mongodump or mongorestore; chat was not stopped.\n' ;;
+    zh:fix_stopping) printf '正在停止聊天服务并备份 MongoDB...\n' ;;
+    en:fix_stopping) printf 'Stopping chat and backing up MongoDB...\n' ;;
+    zh:fix_writer_still_running) printf '聊天服务仍在运行，拒绝修改消息序号。\n' ;;
+    en:fix_writer_still_running) printf 'Chat is still running; refusing to modify message sequences.\n' ;;
+    zh:fix_incomplete) printf '发现上次未完成的修复：%s。请保留备份并联系维护人员，避免覆盖恢复点。\n' "$1" ;;
+    en:fix_incomplete) printf 'Found an incomplete repair at %s. Preserve the backup and contact support before retrying.\n' "$1" ;;
+    zh:fix_requires_running_chat) printf '修复前需要旧聊天服务处于运行状态；请先排查服务状态，避免错误版本的回退。\n' ;;
+    en:fix_requires_running_chat) printf 'The old chat service must be running before repair; check its state to ensure safe rollback.\n' ;;
+    zh:fix_backup_failed) printf '数据库备份失败，正在恢复旧聊天服务。\n' ;;
+    en:fix_backup_failed) printf 'Database backup failed; restarting the old chat service.\n' ;;
+    zh:fix_backup_complete) printf '数据库备份保存在：%s\n' "$1" ;;
+    en:fix_backup_complete) printf 'Database backup saved at: %s\n' "$1" ;;
+    zh:fix_restoring) printf '修复或验证失败，正在恢复聊天相关集合的备份...\n' ;;
+    en:fix_restoring) printf 'Repair or validation failed; restoring the chat collections...\n' ;;
+    zh:fix_restore_failed) printf '自动恢复失败。聊天服务保持停止；请保留备份 %s 并联系维护人员。\n' "$1" ;;
+    en:fix_restore_failed) printf 'Automatic restore failed. Chat remains stopped; preserve backup %s and contact support.\n' "$1" ;;
+    zh:fix_rolled_back) printf '已恢复备份并重新启动旧聊天服务。备份：%s\n' "$1" ;;
+    en:fix_rolled_back) printf 'Backup restored and old chat service restarted. Backup: %s\n' "$1" ;;
+    zh:fix_complete) printf '修复和验证成功。聊天服务保持停止，请立即执行 ./movo up 完成升级。\n' ;;
+    en:fix_complete) printf 'Repair verified. Chat remains stopped; run ./movo up now to complete the upgrade.\n' ;;
+    zh:fix_complete_build) printf '修复和验证成功。聊天服务保持停止，请立即执行 ./movo up --build 完成升级。\n' ;;
+    en:fix_complete_build) printf 'Repair verified. Chat remains stopped; run ./movo up --build now to complete the upgrade.\n' ;;
     zh:pulling_images) printf '正在串行拉取镜像（第 %s 次）...\n' "$1" ;;
     en:pulling_images) printf 'Pulling images sequentially (attempt %s)...\n' "$1" ;;
     zh:pull_retry) printf '第 %s 次拉取失败，%s 秒后继续重试；按 Ctrl+C 可停止。\n' "$1" "$2" ;;

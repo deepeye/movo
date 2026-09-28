@@ -147,50 +147,41 @@ re-join bookkeeping.
 | `unique_conversation_participant` | `session_participants` | unique `(conversation_id, user_id)` |
 | `participant_memberships_by_user` | `session_participants` | `(main_id, user_id, joined_at desc)` |
 | `unique_main_share_token_hash` | `chat_sessions` | partial unique `(main_id, share_token_hash)`, only where the field is a string |
-| `unique_main_session_seq` | `chat_messages` | **unique** `(main_id, session_id, seq)` |
+| `unique_main_session_seq` | `chat_messages` | **unique partial** `(main_id, session_id, seq)` for rows with a string `main_id`, ObjectId `session_id`, and integer `seq` |
 
-The two `session_participants` indexes are defined in
-`SessionParticipantsRepository.ensure_indexes()`
-(`app/dsh_runtime/conversation/participants_repository.py`). The
-`chat_sessions` and `chat_messages` indexes are registered at startup by
-`ConversationRepository.ensure_indexes()` (`app/main.py`).
+The indexes are created automatically by `./movo up` or `./movo update`
+before Compose replaces a running chat-api. The same index checks run during
+chat-api startup for fresh installations and deployments that bypass the CLI.
+The upgrade creates indexes only: it does not rewrite or delete existing
+sessions, messages, or participant rows. Re-running it is safe.
 
-`unique_main_session_seq` makes a message's sequence number unique within its
-session across all writers. When it cannot be created because pre-existing
-rows duplicate `(main_id, session_id, seq)`, startup **aborts** with a
-conflict report - it never skips the index silently, never de-duplicates
-automatically and never continues in a degraded state.
+`unique_main_session_seq` makes a valid message's sequence number unique within
+its session across all writers. Legacy rows missing tenant or sequence fields
+remain outside the index and are not rewritten at startup. When valid rows
+duplicate `(main_id, session_id, seq)`, the upgrade **stops before
+replacing the running services** with a conflict report. It never silently
+de-duplicates or re-sequences customer messages. The old application remains
+available, and the data remains intact. Run `./movo fix` during a maintenance
+window, followed by `./movo up`. A direct startup also aborts.
+Deployments that already have the older full unique index keep using it;
+startup does not replace that stronger index under the same name.
 
-### Re-sequence procedure (when startup reports the conflict)
+### Repairing genuinely duplicated message sequences
 
-If startup fails with a report like the following (the report names the
-index and lists sample offending rows with their tenant, session, sequence,
-duplicate count and message ids):
+Normal customer upgrades require no manual database steps. When the automatic
+check reports valid messages with the same sequence number, run `./movo fix`
+and confirm the maintenance window. `fix` stops chat-api but leaves MongoDB
+running, saves a compressed database archive under `backups/`, re-sequences
+only affected conversations, updates summary ranges, read cursors and session
+counters, then validates and creates the indexes. It does not delete messages
+or change message content. Chat is unavailable from the stop until the
+subsequent `./movo up` completes.
 
-```text
-cannot create unique index 'unique_main_session_seq' on chat_messages:
-pre-existing rows duplicate (main_id, session_id, seq); sample offending
-rows: [...]; aborting startup - run the one-time re-sequence pass from the
-operator runbook and restart
-```
-
-run this one-time, deterministic re-sequence pass and restart:
-
-1. Stop the service and take a database backup (see
-   [Docker deployment](docker-deployment.md) for backup and restore).
-2. For each session - each `(main_id, session_id)` group in `chat_messages`
-   - rewrite `seq` monotonically: sort the session's message rows in
-   `created_at` order (use `_id` as the tie-break for rows that share a
-   timestamp) and renumber `seq` from 1 upward with no gaps and no
-   duplicates. The pass covers every message row of the session, including
-   compaction summary rows.
-3. Restart the service. Startup recreates the unique index and completes.
-
-The renumbering is deterministic because the order is derived from
-`created_at`, not from document order, so re-running it after a completed
-pass renumbers identically. No counter backfill is required: the application
-seeds `next_message_seq` from the session's maximum sequence before every
-append.
+On repair or validation failure, `fix` restores the three chat collections
+from the archive and restarts the old chat-api container. If archive restore
+itself fails, chat-api stays stopped and the archive path is printed for
+recovery. Do not run `./movo down` between `fix` and `up`: MongoDB must remain
+available for the repair and verification steps.
 
 ### Serialized runs and initiator governance
 

@@ -1,7 +1,7 @@
 <template>
   <div class="skill-config-page">
     <Teleport v-if="headerTeleportReady && skill" to="#header-actions-teleport-target">
-      <div class="workflow-header-actions" data-header-actions-owner="skill-config">
+      <div ref="headerActionsElement" class="workflow-header-actions" data-header-actions-owner="skill-config">
         <template v-if="skill.type === 'workflow'">
           <n-button
             v-if="workflowSteps.length"
@@ -797,7 +797,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, onUpdated, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
 import { t, useLocale } from '@/composables/i18n';
@@ -827,6 +827,7 @@ import ReviewCheckNodeConfig from '@/components/workflow/ReviewCheckNodeConfig.v
 import { bindReviewSources } from '@/components/workflow/reviewSourceBinding';
 import readMaterialIcon from '@/assets/workflow-node-icons/read-material.svg';
 import extractInfoIcon from '@/assets/workflow-node-icons/extract-info.svg';
+import reviewCheckIcon from '@/assets/workflow-node-icons/review-check.svg';
 import extractResourcesIcon from '@/assets/workflow-node-icons/extract-resources.svg';
 import understandImageIcon from '@/assets/workflow-node-icons/understand-image.svg';
 import computeMetricIcon from '@/assets/workflow-node-icons/compute-metric.svg';
@@ -902,6 +903,7 @@ const { locale } = useLocale();
 
 const loading = ref(false);
 const headerTeleportReady = ref(false);
+const headerActionsElement = ref<HTMLElement | null>(null);
 const detailRequestSequence = ref(0);
 const saving = ref(false);
 const publishVisible = ref(false);
@@ -1146,11 +1148,11 @@ const workflowNodeTypes = computed<Array<{
     shortLabel: t('复核'),
     color: '#b45309',
     bg: '#fffbeb',
-    icon: extractInfoIcon,
+    icon: reviewCheckIcon,
     defaultTitle: t('复核上游结果'),
     placeholder: t('例如：依据审核规则逐项核对合同条款，列出风险、缺失项和无法确认的事项。'),
     defaultConfig: {
-      reviewSubject: '', reviewCriteria: '', reviewCriteriaMode: 'upstream', outputAlias: '复核结果',
+      reviewSubject: '', reviewCriteria: '', reviewCriteriaMode: 'upstream', outputAlias: t('复核结果'),
     },
     usageDescription: t('指导 Agent 根据已有依据检查上游事实或生成结果，逐项给出判断、原文证据和待人工确认项。'),
     usageExample: t('用审核规则逐条核对合同条款：每条规则给出合同原文和规则原文，无法核实时标记需要人工复核。'),
@@ -1323,11 +1325,14 @@ function createWorkflowNode(type: WorkflowNodeType = 'extract_info', seed: Parti
     ...(meta.defaultConfig || {}),
     ...(seed.businessConfig || {}),
   };
-  const outputAlias = seed.outputAlias || String(businessConfig.outputAlias || '').trim();
+  const outputAlias = seed.outputAlias || (seed.businessConfig?.outputAlias
+    ? String(businessConfig.outputAlias).trim()
+    : t(String(businessConfig.outputAlias || '')).trim());
+  businessConfig.outputAlias = outputAlias;
   return {
     id: seed.id || createId(),
     type,
-    title: seed.title || meta.defaultTitle,
+    title: seed.title || t(meta.defaultTitle),
     text: seed.text || '',
     businessConfig,
     boundWritingSkillId: seed.boundWritingSkillId || '',
@@ -2622,11 +2627,14 @@ function handleMcpToolSelect(step: WorkflowStep, mcpToolName: string | null) {
   step.businessConfig.preferredMcpToolName = String(mcpToolName || '').trim();
 }
 
-function clearSkillHeaderActions() {
+function removeStaleSkillHeaderActions() {
+  if (!headerActionsElement.value) return;
   const target = window.document.querySelector('#header-actions-teleport-target');
   target
-    ?.querySelectorAll('[data-header-actions-owner="skill-config"], .workflow-header-actions')
-    .forEach((item) => item.remove());
+    ?.querySelectorAll('[data-header-actions-owner="skill-config"]')
+    .forEach((item) => {
+      if (item !== headerActionsElement.value) item.remove();
+    });
 }
 
 function refreshHeaderTeleportReady(attempt = 0) {
@@ -2642,10 +2650,11 @@ async function reloadSkillDetail() {
   skill.value = null;
   updateHeaderTitle(null);
   await nextTick();
-  clearSkillHeaderActions();
   await loadDetail();
   await nextTick();
   refreshHeaderTeleportReady();
+  await nextTick();
+  removeStaleSkillHeaderActions();
 }
 
 onMounted(async () => {
@@ -2653,6 +2662,8 @@ onMounted(async () => {
   loadWritingSkillOptions();
   loadToolOptions();
 });
+
+onUpdated(removeStaleSkillHeaderActions);
 
 watch(() => route.params.id, async (nextId, previousId) => {
   if (String(nextId || '') === String(previousId || '')) return;
@@ -2662,7 +2673,6 @@ watch(() => route.params.id, async (nextId, previousId) => {
 onUnmounted(() => {
   detailRequestSequence.value += 1;
   headerTeleportReady.value = false;
-  clearSkillHeaderActions();
   updateHeaderTitle(null);
 });
 </script>

@@ -231,9 +231,11 @@ async def startup_event() -> None:
     await db.chat_sessions.create_index([("main_id", 1), ("user_id", 1), ("updated_at", -1)])
     await db.chat_sessions.create_index([("main_id", 1), ("user_id", 1), ("updated_at", -1), ("_id", -1)])
     from app.dsh_runtime.conversation import ConversationRepository
+    from app.dsh_runtime.conversation.participants_repository import SessionParticipantsRepository
     # Registers the share-token and per-session seq indexes; aborts startup with
     # a report when pre-existing rows duplicate (main_id, session_id, seq).
     await ConversationRepository(db).ensure_indexes()
+    await SessionParticipantsRepository(db).ensure_indexes()
     await db.chat_messages.create_index([("main_id", 1), ("user_id", 1), ("session_id", 1), ("seq", 1)])
     await db.execution_logs.create_index([("main_id", 1), ("session_id", 1), ("message_id", 1)])
     await db.user_skills.create_index([("main_id", 1), ("user_id", 1), ("created_at", -1)])

@@ -2,38 +2,38 @@
   <section class="material-config" @click.stop>
     <header class="config-heading">
       <span class="heading-icon" aria-hidden="true">▤</span>
-      <div><strong>材料从哪里来</strong><p>选择这一步读取的材料，供后续步骤使用</p></div>
+      <div><strong>{{ t('材料从哪里来') }}</strong><p>{{ t('选择这一步读取的材料，供后续步骤使用') }}</p></div>
     </header>
 
-    <div class="source-choices" role="group" aria-label="材料来源">
+    <div class="source-choices" role="group" :aria-label="t('材料来源')">
       <button type="button" class="source-choice" :class="{ selected: sourceType === 'upload' }"
         :aria-pressed="sourceType === 'upload'" @click="setSourceType('upload')">
         <span class="choice-icon upload-icon" aria-hidden="true">↑</span>
-        <span class="choice-copy"><strong>用户上传</strong><small>运行时由用户提供文件</small></span>
+        <span class="choice-copy"><strong>{{ t('用户上传') }}</strong><small>{{ t('运行时由用户提供文件') }}</small></span>
         <span class="choice-check" aria-hidden="true">✓</span>
       </button>
       <button type="button" class="source-choice" :class="{ selected: sourceType === 'knowledge_document' }"
         :aria-pressed="sourceType === 'knowledge_document'" @click="setSourceType('knowledge_document')">
         <span class="choice-icon knowledge-icon" aria-hidden="true">▤</span>
-        <span class="choice-copy"><strong>知识库文档</strong><small>读取已解析的指定文档</small></span>
+        <span class="choice-copy"><strong>{{ t('知识库文档') }}</strong><small>{{ t('读取已解析的指定文档') }}</small></span>
         <span class="choice-check" aria-hidden="true">✓</span>
       </button>
     </div>
 
     <div v-if="sourceType === 'knowledge_document'" class="source-detail">
-      <div class="field-heading"><strong>选择文档</strong><span>我的文档及共享给我的文档</span></div>
+      <div class="field-heading"><strong>{{ t('选择文档') }}</strong><span>{{ t('我的文档及共享给我的文档') }}</span></div>
       <PersonalKnowledgeDocumentPicker :value="String(businessConfig.knowledgeSourceId || '')"
         @update:value="setDocument" />
-      <p class="field-hint">支持按目录筛选、搜索名称和翻页；只可选择已解析文档</p>
+      <p class="field-hint">{{ t('支持按目录筛选、搜索名称和翻页；只可选择已解析文档') }}</p>
     </div>
     <div v-else class="source-detail upload-detail">
       <span class="detail-dot" aria-hidden="true"></span>
-      <span>用户发起任务时上传文件；这里无需提前选择文件。</span>
+      <span>{{ t('用户发起任务时上传文件；这里无需提前选择文件。') }}</span>
     </div>
 
     <div class="output-field">
-      <div class="field-heading"><strong>给这份材料起个名字</strong><span>后续节点会用这个名字引用</span></div>
-      <n-input :value="outputAlias" size="medium" aria-label="材料输出名" placeholder="例如：待审合同、审核规则"
+      <div class="field-heading"><strong>{{ t('给这份材料起个名字') }}</strong><span>{{ t('后续节点会用这个名字引用') }}</span></div>
+      <n-input :value="outputAlias" size="medium" :aria-label="t('材料输出名')" :placeholder="t('例如：待审合同、审核规则')"
         @update:value="(value: string) => emit('update:outputAlias', value)" />
     </div>
   </section>
@@ -41,6 +41,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { t } from '../../composables/i18n';
 import PersonalKnowledgeDocumentPicker from './PersonalKnowledgeDocumentPicker.vue';
 
 const props = defineProps<{ businessConfig: Record<string, any>; outputAlias: string }>();
