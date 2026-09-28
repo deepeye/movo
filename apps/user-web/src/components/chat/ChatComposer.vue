@@ -15,6 +15,7 @@ interface PendingImage {
 
 const props = defineProps<{
   running: boolean
+  blocked?: boolean
   stopping?: boolean
   isNewSessionView: boolean
   chatModels: ChatModelOption[]
@@ -29,7 +30,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'send', payload: { text: string; images: File[]; documents: PendingDocument[]; knowledgeQaEnabled: boolean; selectedSkillId?: string; modelId?: string }): void
+  (e: 'send', payload: { text: string; images: File[]; documents: PendingDocument[]; knowledgeQaEnabled: boolean; selectedSkillId?: string; modelId?: string; onRejected?: () => void }): void
   (e: 'stop'): void
   (e: 'select-model', modelId: string): void
   (e: 'image-preview', payload: { src: string; alt: string }): void
@@ -437,6 +438,7 @@ function onComposerKeydown(event: KeyboardEvent) {
 }
 
 async function sendMessage() {
+  if (props.blocked) return
   if (props.running) {
     if (props.stopping) return
     emit('stop')
@@ -451,6 +453,8 @@ async function sendMessage() {
   const text = userInput.value
   const imageFiles = pendingImages.value.map((item) => item.file)
   const documentFiles = pendingDocuments.value.map((item) => ({ file: item.file, kind: item.kind }))
+  const skill = selectedSkill.value
+  const knowledgeEnabled = knowledgeQaEnabled.value
   closeAttachmentMenu()
   userInput.value = ''
   await nextTick()
@@ -460,6 +464,7 @@ async function sendMessage() {
   }
   pendingImages.value = []
   pendingDocuments.value = []
+  selectedSkill.value = null
   emit('send', {
     text,
     images: imageFiles,
@@ -467,8 +472,15 @@ async function sendMessage() {
     knowledgeQaEnabled: knowledgeQaEnabled.value,
     selectedSkillId: selectedSkill.value?.id || undefined,
     modelId: props.selectedModelId || undefined,
+    onRejected: () => {
+      userInput.value = userInput.value ? `${text}\n\n${userInput.value}` : text
+      pendingImages.value.push(...imageFiles.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })))
+      pendingDocuments.value.push(...documentFiles)
+      if (!selectedSkill.value) selectedSkill.value = skill
+      knowledgeQaEnabled.value = knowledgeEnabled
+      void nextTick(() => { autoResizeComposerInput(); composerInputRef.value?.focus() })
+    },
   })
-  selectedSkill.value = null
 }
 
 function openPendingImagePreview(src: string, alt: string) {
@@ -739,7 +751,7 @@ watch(() => props.allowSkills, (allowed) => {
           @compositionend="onComposerCompositionEnd"
           rows="1"
           :placeholder="t('chat.composer.placeholder')"
-          :disabled="running"
+          :disabled="running || blocked"
           :aria-expanded="skillPickerOpen"
           aria-haspopup="listbox"
           :aria-activedescendant="skillPickerOpen && activeSkillIndex >= 0 ? `skill-picker-option-${activeSkillIndex}` : undefined"
@@ -750,7 +762,7 @@ watch(() => props.allowSkills, (allowed) => {
         <div ref="attachmentMenuRef" class="relative">
           <button
             class="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100"
-            :disabled="running"
+            :disabled="running || blocked"
             :aria-label="locale === 'zh' ? '添加附件' : 'Add attachment'"
             @click.stop="toggleAttachmentMenu"
           >
@@ -809,9 +821,9 @@ watch(() => props.allowSkills, (allowed) => {
           <button
             type="button"
             class="group flex h-7 max-w-[240px] items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100"
-            :class="running ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'"
+            :class="running || blocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'"
             :title="modelLoadError || modelSelectorLabel"
-            :disabled="running"
+            :disabled="running || blocked"
             @click="toggleModelDropdown"
           >
             <span class="truncate text-left">{{ modelSelectorLabel }}</span>
@@ -847,7 +859,7 @@ watch(() => props.allowSkills, (allowed) => {
         <ComposerActionButton
           :running="running"
           :stopping="stopping"
-          :disabled="stopping || (!userInput.trim() && pendingImages.length === 0 && pendingDocuments.length === 0 && !selectedSkill && !running)"
+          :disabled="blocked || stopping || (!userInput.trim() && pendingImages.length === 0 && pendingDocuments.length === 0 && !selectedSkill && !running)"
           :locale="locale"
           @activate="sendMessage"
         />

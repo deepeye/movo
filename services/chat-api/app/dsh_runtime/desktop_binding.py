@@ -107,7 +107,11 @@ class DesktopCodeBindingService:
         binding = await self._bindings.current(
             conversation_id, tenant_id=tenant_id, user_id=user_id
         )
-        if binding is None or str(binding.get("execution_location") or "") != "desktop":
+        if (
+            binding is None
+            or str(binding.get("execution_location") or "") != "desktop"
+            or str(binding.get("user_id") or "") != user_id
+        ):
             return None
         if str(binding.get("device_id") or "") != device_id:
             raise ValueError("Code Session belongs to another desktop device")

@@ -127,6 +127,7 @@ from app.api.endpoints import (
     skill_updates,
     skill_share_direct,
     skill_shares,
+    session_shares,
     resource_feedback,
     personal_knowledge,
     tasks,
@@ -153,6 +154,7 @@ app.include_router(skill_lifecycle.router, prefix="/api")
 app.include_router(skill_updates.router, prefix="/api")
 app.include_router(skill_share_direct.router, prefix="/api")
 app.include_router(skill_shares.router, prefix="/api")
+app.include_router(session_shares.router, prefix="/api")
 app.include_router(resource_feedback.router, prefix="/api")
 app.include_router(personal_knowledge.router, prefix="/api")
 app.include_router(site_profiles.router, prefix="/api")
@@ -228,6 +230,10 @@ async def startup_event() -> None:
     await db.chat_sessions.create_index([("user_id", 1), ("created_at", -1)])
     await db.chat_sessions.create_index([("main_id", 1), ("user_id", 1), ("updated_at", -1)])
     await db.chat_sessions.create_index([("main_id", 1), ("user_id", 1), ("updated_at", -1), ("_id", -1)])
+    from app.dsh_runtime.conversation import ConversationRepository
+    # Registers the share-token and per-session seq indexes; aborts startup with
+    # a report when pre-existing rows duplicate (main_id, session_id, seq).
+    await ConversationRepository(db).ensure_indexes()
     await db.chat_messages.create_index([("main_id", 1), ("user_id", 1), ("session_id", 1), ("seq", 1)])
     await db.execution_logs.create_index([("main_id", 1), ("session_id", 1), ("message_id", 1)])
     await db.user_skills.create_index([("main_id", 1), ("user_id", 1), ("created_at", -1)])

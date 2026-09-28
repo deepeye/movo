@@ -12,6 +12,7 @@ from app.dsh_runtime.model_gateway.service import (
     ModelGatewayRequest,
     ModelGatewayService,
 )
+from app.dsh_runtime.model_gateway import service as model_gateway_service
 from app.dsh_runtime.model_gateway.token import ModelGatewayTokenService
 from app.dsh_runtime.profile import (
     InMemoryRuntimeProfileStore,
@@ -143,7 +144,7 @@ async def _test_profile_rejects_cross_tenant_and_resolver_scopes_ephemeral_token
     with pytest.raises(ValueError, match="cross-tenant"):
         await compiler.compile(tenant_id="tenant-a", model_instance_id="model-foreign")
 
-    snapshot = await compiler.compile(tenant_id="tenant-a")
+    snapshot = await compiler.compile(tenant_id="tenant-a", user_id="speaker-a")
     store = InMemoryRuntimeProfileStore()
     await store.publish(snapshot, actor_id="admin")
     tokens = ModelGatewayTokenService("step-3-test-signing-secret")
@@ -152,6 +153,7 @@ async def _test_profile_rejects_cross_tenant_and_resolver_scopes_ephemeral_token
     claims = tokens.verify(str(payload["accessToken"]))
     assert claims.tenant_id == "tenant-a"
     assert claims.model_instance_id == "model-a"
+    assert claims.user_id == "speaker-a"
     assert payload["modelInstanceId"] == "model-a"
     assert "LONG-LIVED-SECRET" not in json.dumps(payload)
     with pytest.raises(ValueError, match="cross-tenant"):
@@ -162,16 +164,42 @@ def test_model_gateway_enforces_scope_maps_messages_and_usage() -> None:
     asyncio.run(_test_model_gateway_enforces_scope_maps_messages_and_usage())
 
 
+def test_model_gateway_accounts_usage_to_signed_speaker(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    async def get_config(model_id: str, tenant_id: str) -> dict[str, Any]:
+        assert (model_id, tenant_id) == ("model-a", "tenant-a")
+        return {"id": model_id}
+
+    def build_client(_config: dict[str, Any], **kwargs: Any) -> BaseLLMClient:
+        captured.update(kwargs["output_spec"])
+        return FakeClient()
+
+    monkeypatch.setattr(model_gateway_service, "get_model_config", get_config)
+    monkeypatch.setattr(model_gateway_service, "build_llm_client_from_config", build_client)
+    tokens = ModelGatewayTokenService("step-3-test-signing-secret")
+    claims = tokens.verify(tokens.issue(
+        tenant_id="tenant-a", profile_version="profile-a", model_instance_id="model-a", user_id="speaker-a"
+    ))
+    request = ModelGatewayRequest(
+        profileVersion="profile-a", modelInstanceId="model-a", provider="askai-model-gateway",
+        model="deepseek-chat", messages=[{"role": "user", "content": "hello"}], sessionId="kernel-a",
+    )
+    asyncio.run(ModelGatewayService().generate(request, claims))
+    assert captured["user_id"] == "speaker-a"
+    assert captured["main_id"] == "tenant-a"
+
+
 async def _test_model_gateway_enforces_scope_maps_messages_and_usage() -> None:
     client = FakeClient()
 
-    async def factory(model_instance_id: str, tenant_id: str, _request: ModelGatewayRequest) -> BaseLLMClient:
-        assert (model_instance_id, tenant_id) == ("model-a", "tenant-a")
+    async def factory(model_instance_id: str, tenant_id: str, _request: ModelGatewayRequest, user_id: str) -> BaseLLMClient:
+        assert (model_instance_id, tenant_id, user_id) == ("model-a", "tenant-a", "speaker-a")
         return client
 
     token_service = ModelGatewayTokenService("step-3-test-signing-secret")
     claims = token_service.verify(
-        token_service.issue(tenant_id="tenant-a", profile_version="profile-a", model_instance_id="model-a")
+        token_service.issue(tenant_id="tenant-a", profile_version="profile-a", model_instance_id="model-a", user_id="speaker-a")
     )
     request = ModelGatewayRequest(
         profileVersion="profile-a",
@@ -216,7 +244,7 @@ def test_model_gateway_normalizes_provider_failures(
     retryable: bool,
 ) -> None:
     async def run() -> None:
-        async def factory(_model: str, _tenant: str, _request: ModelGatewayRequest) -> BaseLLMClient:
+        async def factory(_model: str, _tenant: str, _request: ModelGatewayRequest, _user_id: str) -> BaseLLMClient:
             return FakeClient(failure=provider_error)
 
         tokens = ModelGatewayTokenService("step-3-test-signing-secret")

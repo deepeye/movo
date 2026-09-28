@@ -9,6 +9,7 @@ import CodeHistoryReadOnlyNotice from './code/CodeHistoryReadOnlyNotice.vue'
 import CodeTaskChangeCard from './code/CodeTaskChangeCard.vue'
 import CodeDraftContextBar from './code/CodeDraftContextBar.vue'
 import ChatComposer from './chat/ChatComposer.vue'
+import SessionRunNotice from './chat/SessionRunNotice.vue'
 import AssistantMarkdown from './chat/AssistantMarkdown.vue'
 import type { PendingDocument } from './chat/types'
 import { useAuthoritativeMessages } from './chat/useAuthoritativeMessages'
@@ -38,10 +39,12 @@ import type { DshCodeSession, DshExecutionEvent, DshPendingApproval, DshTaskChan
 import { capabilities } from '../platform'
 import type { DesktopToolLauncherKind, DesktopToolTab } from './desktop/desktopToolTabs'
 import type { AgentPolicySnapshot } from '../api/auth'
+import { listSessionParticipants } from '../api/sessionSharing'
 import { resolveArtifactIcon, resolveArtifactPresentation } from '../registries'
 import { resolveArtifactKind } from '../features/execution-v3/domain/artifactKind'
 import { authenticatedJsonHeaders } from '../api/authHeaders'
 import { agentResourceFamilyAvailable } from '../composables/useEnterpriseAccessPolicy'
+import type { ForeignRun } from '../composables/sessionRunPresence'
 
 type ProjectPanelMode = 'changes' | 'files' | 'terminal' | 'file' | 'diff'
 const ProjectWorkspacePanel = defineAsyncComponent(() => import('./code/ProjectWorkspacePanel.vue'))
@@ -63,6 +66,9 @@ const props = defineProps<{
   authToken?: string
   active: boolean
   running?: boolean
+  foreignRun?: ForeignRun | null
+  foreignRunFinished?: boolean
+  refreshingSession?: boolean
   stopping?: boolean
   codeWorkspace?: DshWorkspace | null
   codeWorkspaces?: readonly DshWorkspace[]
@@ -118,8 +124,9 @@ const emit = defineEmits<{
   (e: 'open-skills'): void
   (e: 'open-tools'): void
   (e: 'open-knowledge'): void
-  (e: 'send', payload: { text: string; images: File[]; documents: PendingDocument[]; knowledgeQaEnabled: boolean; selectedSkillId?: string; modelId?: string }): void
+  (e: 'send', payload: { text: string; images: File[]; documents: PendingDocument[]; knowledgeQaEnabled: boolean; selectedSkillId?: string; modelId?: string; onRejected?: () => void }): void
   (e: 'stop'): void
+  (e: 'refresh-session'): void
   (e: 'clear-intervention'): void
   (e: 'approval-decided'): void
   (e: 'choose-code-workspace'): void
@@ -150,6 +157,9 @@ interface Message {
   _backendSid?: string
   /** Stable id for this assistant turn; used to bind persisted exec log */
   message_id?: string
+  /** Message author (todo 28): present on session-GET messages, the viewer's
+   *  own user_id on optimistic pushes. Absent (legacy/system) renders as today. */
+  user_id?: string
   /** Persisted V3 events returned by GET /sessions/{id} for replay. */
   execution_events?: unknown[]
   trigger_source?: string
@@ -289,6 +299,47 @@ const displayMessages = computed(() => {
     result.push(msg)
   }
   return result
+})
+
+// Author labels (todo 28): names resolve from the session members list, fetched
+// once per session and sequence-guarded against stale in-flight responses (the
+// ChatSessionHeader detail-fetch idiom).
+const memberNamesBySession = ref(new Map<string, Map<string, string>>())
+let participantsFetchSequence = 0
+watch(
+  () => props.sessionId,
+  (sessionId) => {
+    if (!sessionId || memberNamesBySession.value.has(sessionId)) return
+    const sequence = ++participantsFetchSequence
+    void (async () => {
+      const result = await listSessionParticipants(sessionId)
+      if (sequence !== participantsFetchSequence) return
+      if (result.ok === false) return
+      const names = new Map<string, string>()
+      for (const item of result.data.items) names.set(item.user_id, item.display_name)
+      memberNamesBySession.value.set(sessionId, names)
+    })()
+  },
+  { immediate: true },
+)
+
+function isOwnMessage(msg: Message): boolean {
+  if (!msg.user_id || !props.userId) return true
+  return msg.user_id === props.userId
+}
+
+function authorLabel(msg: Message): string {
+  if (msg.role !== 'user' || isOwnMessage(msg)) return ''
+  const id = msg.user_id || ''
+  const known = props.sessionId ? memberNamesBySession.value.get(props.sessionId)?.get(id) : undefined
+  const name = known?.trim()
+  return name || id.slice(0, 8)
+}
+
+const foreignRunSpeakerName = computed(() => {
+  const id = props.foreignRun?.initiatorUserId || ''
+  const name = props.sessionId ? memberNamesBySession.value.get(props.sessionId)?.get(id)?.trim() : ''
+  return name || t('session.run.another_member')
 })
 
 const imagePreviewOpen = ref(false)
@@ -1989,14 +2040,16 @@ function formatErrorMessage(raw: string): string {
           <div
             :ref="(el) => setMsgRef(el, msg._id || '')" 
             class="group/user-message flex w-full"
-            :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
+            :class="msg.role === 'user' && isOwnMessage(msg) ? 'justify-end' : 'justify-start'"
             :data-scroll-anchor="stickyState === 'LOCKED' && msg._id === stickyAssistantMsgId ? 'true' : undefined"
             :style="msg.role === 'assistant' ? assistantTurnStyle(msg) : undefined"
           >
           <!-- Message Bubble Container -->
           <div 
-            class="relative max-w-[85%] rounded-2xl p-4 transition-all duration-200"
-            :class="msg.role === 'user' ? 'bg-transparent p-0 text-slate-800' : 'bg-transparent text-gray-900 px-0'"
+            class="relative max-w-[85%] rounded-2xl bg-transparent transition-all duration-200"
+            :class="msg.role === 'assistant'
+              ? 'py-4 text-gray-900'
+              : isOwnMessage(msg) ? 'p-4 text-slate-800' : 'text-slate-800'"
           >
             <div v-if="msg.role === 'assistant'" class="mb-4">
               <ExecutionViewV3
@@ -2072,6 +2125,7 @@ function formatErrorMessage(raw: string): string {
               </div>
             </template>
             <template v-else>
+              <div v-if="authorLabel(msg)" class="mb-1 px-1 text-xs font-medium text-slate-500">{{ authorLabel(msg) }}</div>
               <div class="rounded-2xl rounded-br-sm bg-blue-50 p-4 shadow-sm">
                 <div v-if="msg.trigger_source === 'scheduled'" class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
                   <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
@@ -2150,6 +2204,14 @@ function formatErrorMessage(raw: string): string {
 
     <!-- New composer-area features should be mounted as child components or slot content here. -->
     <div ref="composerContainer" class="shrink-0">
+      <div v-if="props.foreignRun || props.foreignRunFinished" class="px-4 md:px-6">
+        <SessionRunNotice
+          :running="Boolean(props.foreignRun)"
+          :speaker-name="foreignRunSpeakerName"
+          :refreshing="Boolean(props.refreshingSession)"
+          @refresh="emit('refresh-session')"
+        />
+      </div>
       <div v-if="props.codeError" class="mx-auto w-full max-w-4xl px-4 md:px-6">
         <div class="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700" role="alert">
           {{ props.codeError }}
@@ -2182,6 +2244,7 @@ function formatErrorMessage(raw: string): string {
         v-else
         ref="composerRef"
         :running="isLoading"
+        :blocked="Boolean(props.foreignRun || props.foreignRunFinished)"
         :stopping="Boolean(props.stopping)"
         :is-new-session-view="isNewSessionView"
         :chat-models="chatModels"

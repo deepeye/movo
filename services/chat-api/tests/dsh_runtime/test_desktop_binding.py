@@ -190,6 +190,7 @@ def test_desktop_runtime_rebind_preserves_profile_and_session_identity() -> None
         existing = {
             "binding_id": "b", "conversation_id": "c", "kernel_session_id": "session-a",
             "device_id": "device-a", "execution_location": "desktop",
+            "user_id": "user-a",
             "profile_version": "rp-a", "runtime_id": "runtime-old",
         }
         bindings = Bindings(existing)
@@ -204,4 +205,21 @@ def test_desktop_runtime_rebind_preserves_profile_and_session_identity() -> None
                 tenant_id="tenant-a", user_id="user-a", device_id="device-a",
                 conversation_id="c", profile_version="rp-b", runtime_id="runtime-x",
             )
+    asyncio.run(run())
+
+
+def test_desktop_binding_resolve_requires_original_user() -> None:
+    async def run():
+        existing = {
+            "binding_id": "b", "conversation_id": "c", "kernel_session_id": "session-a",
+            "device_id": "device-a", "execution_location": "desktop", "user_id": "user-a",
+        }
+        service = DesktopCodeBindingService(Conversations(), Bindings(existing), Profiles(), kernel_version="v")
+        assert await service.resolve(
+            tenant_id="tenant-a", user_id="user-a", device_id="device-a", conversation_id="c",
+        ) is existing
+        assert await service.resolve(
+            tenant_id="tenant-a", user_id="user-b", device_id="device-a", conversation_id="c",
+        ) is None
+
     asyncio.run(run())

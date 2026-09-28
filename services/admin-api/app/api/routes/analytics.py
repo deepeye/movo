@@ -15,6 +15,7 @@ from app.services.token_usage_analytics_helpers import (
     load_execution_statuses,
     load_user_request_texts,
 )
+from app.services.token_usage_chat_history import load_visible_turn
 from app.services.token_usage_status import REQUEST_STATUS_VALUES, normalize_request_status
 
 router = APIRouter()
@@ -455,113 +456,15 @@ async def get_token_usage_detail(
 @router.get("/token-usage/{request_id}/chat-history")
 async def get_session_chat_history(
     request_id: str,
-    sessionId: str = Query(default=""),
-    userRequestId: str = Query(default=""),
     current_user: dict[str, Any] = Depends(get_current_admin_user),
 ) -> dict[str, Any]:
     db = get_db()
     own_main_id = str(current_user.get("main_id") or "default")
-    
-    # 1. 优先按一次用户请求定位当前 assistant 消息，并补上它前一条 user 消息。
-    session_id_val = sessionId.strip()
-    user_request_id_val = userRequestId.strip()
-    messages = []
-    session_title = ""
+    row = await db.token_usage_logs.find_one({"request_id": request_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="未找到对应的调用记录")
+    if str(row.get("main_id") or "default") != own_main_id:
+        raise HTTPException(status_code=403, detail="无权查看该记录")
 
-    def _message_payload(msg: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id": str(msg.get("_id")),
-            "role": str(msg.get("role") or ""),
-            "content": str(msg.get("content") or ""),
-            "plan": msg.get("plan") or None,
-            "progress": msg.get("progress") or None,
-            "documents": msg.get("documents") or [],
-            "images": msg.get("images") or [],
-            "createdAt": _format_utc_datetime(msg.get("created_at")),
-        }
-
-    if user_request_id_val:
-        assistant_msg = await db.chat_messages.find_one(
-            {
-                "main_id": own_main_id,
-                "message_id": user_request_id_val,
-                "message_type": {"$ne": "context_summary"},
-            }
-        )
-        if assistant_msg:
-            session_oid = assistant_msg.get("session_id")
-            session_doc = await db.chat_sessions.find_one({"_id": session_oid, "main_id": own_main_id}) if session_oid else None
-            session_title = str(session_doc.get("title") or "单次请求详情") if session_doc else "单次请求详情"
-            prev_user_msg = await db.chat_messages.find_one(
-                {
-                    "main_id": own_main_id,
-                    "session_id": session_oid,
-                    "role": "user",
-                    "message_type": {"$ne": "context_summary"},
-                    "seq": {"$lt": int(assistant_msg.get("seq") or 0)},
-                },
-                sort=[("seq", -1)],
-            ) if session_oid else None
-            if prev_user_msg:
-                messages.append(_message_payload(prev_user_msg))
-            messages.append(_message_payload(assistant_msg))
-
-    # 2. 如果没有查到会话历史，则根据 request_id 进行平滑降级（只组装当前单次请求的内容）
-    if not messages:
-        row = await db.token_usage_logs.find_one({"request_id": request_id})
-        if not row:
-            raise HTTPException(status_code=404, detail="未找到对应的调用或会话记录")
-        
-        row_main_id = str(row.get("main_id") or "default")
-        if row_main_id != own_main_id:
-            raise HTTPException(status_code=403, detail="无权查看该记录")
-        
-        # 提取回复内容
-        reply_content = ""
-        response_payload = row.get("response_payload")
-        if response_payload and isinstance(response_payload, dict):
-            choices = response_payload.get("choices")
-            if choices and isinstance(choices, list) and len(choices) > 0:
-                msg_body = choices[0].get("message")
-                if msg_body and isinstance(msg_body, dict):
-                    reply_content = msg_body.get("content") or ""
-            if not reply_content:
-                reply_content = response_payload.get("output") or ""
-        
-        if not reply_content:
-            reply_content = "暂无回复内容或回复格式无法解析"
-
-        session_title = str(row.get("request_title_zh") or row.get("intent") or "单次调用详情")
-        
-        # 封装为单轮对话消息流
-        created_at_val = _format_utc_datetime(row.get("created_at"))
-        
-        # 提问消息
-        messages.append({
-            "id": f"msg_user_{request_id}",
-            "role": "user",
-            "content": str(row.get("prompt") or ""),
-            "plan": None,
-            "progress": None,
-            "documents": [],
-            "images": [],
-            "createdAt": created_at_val,
-        })
-        
-        # 回复消息
-        messages.append({
-            "id": f"msg_ai_{request_id}",
-            "role": "assistant",
-            "content": reply_content,
-            "plan": None,
-            "progress": None,
-            "documents": [],
-            "images": [],
-            "createdAt": created_at_val,
-        })
-
-    return {
-        "sessionId": session_id_val,
-        "title": session_title,
-        "messages": messages,
-    }
+    # Resolve messages only from this authorized usage record.
+    return await load_visible_turn(db, row, own_main_id)

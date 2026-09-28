@@ -6,6 +6,15 @@ image.
 
 ## Unreleased
 
+### Added
+
+- Share conversations with other users in the same organization through a
+  revocable, expiring session share link. Recipients log in when needed and
+  join from the link, and the session appears under a "Shared with me"
+  sidebar section; both members see the full author-labelled history while
+  each keeps their own model, tools, and permissions. Thanks to @vinvcn
+  for contributing this feature.
+
 ## v0.1.15 - 2026-09-16
 
 ### Added

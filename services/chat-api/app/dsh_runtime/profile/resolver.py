@@ -32,6 +32,7 @@ class RuntimeProfileResolver:
             tenant_id=snapshot.tenant_id,
             profile_version=snapshot.profile_version,
             model_instance_id=snapshot.model_instance_id,
+            user_id=snapshot.subject_user_id,
         )
         tool_token = ""
         if snapshot.tools:
