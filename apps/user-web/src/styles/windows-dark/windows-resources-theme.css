@@ -1,0 +1,118 @@
+/* Windows resource-page adjustments; Mac keeps its existing presentation. */
+html.platform-windows:not(.theme-dark) .skills-page .empty-shell,
+html.platform-windows:not(.theme-dark) .tools-page .empty-shell {
+  background: #f8fbff !important;
+  border-color: #cbd9eb !important;
+}
+
+html.platform-windows:not(.theme-dark) .skills-page .empty-title,
+html.platform-windows:not(.theme-dark) .tools-page .empty-title {
+  color: #203650 !important;
+}
+
+html.platform-windows:not(.theme-dark) .skills-page .empty-desc,
+html.platform-windows:not(.theme-dark) .tools-page .empty-desc,
+html.platform-windows:not(.theme-dark) .skills-page .metric-note,
+html.platform-windows:not(.theme-dark) .tools-page .metric-note {
+  color: #52677f !important;
+}
+
+html.platform-windows.theme-dark .skills-page,
+html.platform-windows.theme-dark .tools-page {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+html.platform-windows.theme-dark .skills-page .shell-card,
+html.platform-windows.theme-dark .skills-page .metric-card,
+html.platform-windows.theme-dark .skills-page .skill-card,
+html.platform-windows.theme-dark .tools-page .shell-card,
+html.platform-windows.theme-dark .tools-page .metric-card,
+html.platform-windows.theme-dark .tools-page .tool-card,
+html.platform-windows.theme-dark .tools-page .editor-card,
+html.platform-windows.theme-dark .tools-page .tools-header {
+  background: #182131 !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html.platform-windows.theme-dark .skills-page .skill-card-disabled {
+  background: #141d2b !important;
+}
+
+html.platform-windows.theme-dark .skills-page .metric-value,
+html.platform-windows.theme-dark .skills-page .card-title,
+html.platform-windows.theme-dark .skills-page .empty-title,
+html.platform-windows.theme-dark .tools-page .metric-value,
+html.platform-windows.theme-dark .tools-page .card-title,
+html.platform-windows.theme-dark .tools-page .empty-title,
+html.platform-windows.theme-dark .tools-page .tools-header h1 {
+  color: #f1f5f9 !important;
+}
+
+html.platform-windows.theme-dark .skills-page .metric-label,
+html.platform-windows.theme-dark .skills-page .metric-note,
+html.platform-windows.theme-dark .skills-page .card-desc,
+html.platform-windows.theme-dark .skills-page .card-time,
+html.platform-windows.theme-dark .skills-page .empty-desc,
+html.platform-windows.theme-dark .tools-page .metric-label,
+html.platform-windows.theme-dark .tools-page .metric-note,
+html.platform-windows.theme-dark .tools-page .card-desc,
+html.platform-windows.theme-dark .tools-page .card-footnote,
+html.platform-windows.theme-dark .tools-page .empty-desc,
+html.platform-windows.theme-dark .tools-page .muted {
+  color: #a8b7ca !important;
+}
+
+html.platform-windows.theme-dark .skills-page .empty-shell,
+html.platform-windows.theme-dark .tools-page .empty-shell {
+  background: #111827 !important;
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .skills-page :is(.card-switch, .feedback-btn-unread),
+html.platform-windows.theme-dark .tools-page :is(.test-summary, .result-panel, .schema-grid, .schema-head) {
+  background: #223750 !important;
+  border-color: #435d7f !important;
+}
+
+html.platform-windows.theme-dark .skills-page :is(.card-switch-label, .feedback-btn, .edit-type-value),
+html.platform-windows.theme-dark .tools-page :is(.status-switch-label, .response-summary, .test-metrics-row span, .schema-head) {
+  color: #b5c9e1 !important;
+}
+
+html.platform-windows.theme-dark .tools-page :is(.debug-overview strong, .result-title, .json-pre-panel) {
+  color: #eaf2ff !important;
+}
+
+html.platform-windows.theme-dark .tools-page .json-pre-panel {
+  background: #132238 !important;
+  border-color: #3d5574 !important;
+}
+
+html.platform-windows.theme-dark .tools-page :is(.success-text, .metric-icon-enabled) {
+  color: #82dfba !important;
+}
+
+html.platform-windows.theme-dark .tools-page .error-text {
+  color: #ff9fab !important;
+}
+
+html.platform-windows.theme-dark .skills-page .empty-visual span,
+html.platform-windows.theme-dark .tools-page .empty-visual span {
+  background: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+  color: #bfdbfe !important;
+}
+
+html.platform-windows.theme-dark .skills-page :is(.n-button--default-type, .n-button--secondary-type),
+html.platform-windows.theme-dark .tools-page :is(.n-button--default-type, .n-button--secondary-type) {
+  --n-color: #263a58 !important;
+  --n-color-hover: #315078 !important;
+  --n-color-pressed: #20334f !important;
+  --n-border: 1px solid #496486 !important;
+  --n-border-hover: 1px solid #6f9dd7 !important;
+  --n-text-color: #dce8fa !important;
+  --n-text-color-hover: #ffffff !important;
+  --n-text-color-pressed: #ffffff !important;
+}

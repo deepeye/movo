@@ -1,0 +1,55 @@
+/* Windows-only dark user-web styles. */
+/* Skills' secondary views and dialogs in the Windows dark desktop. */
+html.platform-windows.theme-dark .inbox-card,
+html.platform-windows.theme-dark .skill-summary,
+html.platform-windows.theme-dark .summary-card,
+html.platform-windows.theme-dark .version-card,
+html.platform-windows.theme-dark .updates,
+html.platform-windows.theme-dark .updates article,
+html.platform-windows.theme-dark .feedback .replies,
+html.platform-windows.theme-dark .feedback .replying,
+html.platform-windows.theme-dark .zip-dropzone {
+  background: #1b2a40 !important;
+  border-color: #3d5473 !important;
+  color: #dce8f7 !important;
+  box-shadow: none !important;
+}
+html.platform-windows.theme-dark .zip-dropzone.dragging,
+html.platform-windows.theme-dark .view-tabs button.active {
+  background: #274572 !important;
+  border-color: #74a6f4 !important;
+  color: #ecf4ff !important;
+}
+html.platform-windows.theme-dark .view-tabs button:hover { background: #273951 !important; color: #f0f6ff !important; }
+html.platform-windows.theme-dark .sender-copy strong,
+html.platform-windows.theme-dark .skill-name,
+html.platform-windows.theme-dark .skill-summary strong,
+html.platform-windows.theme-dark .summary-row,
+html.platform-windows.theme-dark .children-section h3,
+html.platform-windows.theme-dark .skill-heading strong,
+html.platform-windows.theme-dark .detail-section h3,
+html.platform-windows.theme-dark .preview-title,
+html.platform-windows.theme-dark .section-label,
+html.platform-windows.theme-dark .zip-dropzone strong,
+html.platform-windows.theme-dark .comment .meta strong { color: #eef5ff !important; }
+html.platform-windows.theme-dark .feedback .composer { background: #121e30 !important; border-color: #3d5473 !important; }
+html.platform-windows.theme-dark .feedback > header,
+html.platform-windows.theme-dark .feedback .comments > section,
+html.platform-windows.theme-dark .comment.reply { border-color: #3d5473 !important; }
+html.platform-windows.theme-dark .comment .body p,
+html.platform-windows.theme-dark .comment .reply-to,
+html.platform-windows.theme-dark .feedback .total,
+html.platform-windows.theme-dark .updates p,
+html.platform-windows.theme-dark .updates small,
+html.platform-windows.theme-dark .skill-heading span { color: #acbfd8 !important; }
+html.platform-windows.theme-dark .comment.highlighted { animation: none !important; background: #294872 !important; }
+html.platform-windows.theme-dark .detail-section p {
+  background: #17253a !important;
+  color: #cad9ed !important;
+}
+html.platform-windows.theme-dark .sender-avatar,
+html.platform-windows.theme-dark .skill-mark,
+html.platform-windows.theme-dark .comment .avatar {
+  background: #294c77 !important;
+  color: #c9e0ff !important;
+}

@@ -1,0 +1,67 @@
+/* Windows-only dark user-web styles. */
+/* Naive modal plus hand-styled knowledge and Skill detail content. */
+html.platform-windows.theme-dark .skill-details-modal .summary-card {
+  color: #e8f1ff !important;
+  background: #1c2b42 !important;
+  border-color: #40536f !important;
+}
+
+html.platform-windows.theme-dark .skill-details-modal,
+html.platform-windows.theme-dark .detail-modal {
+  color: #e8f1ff !important;
+  background: #172338 !important;
+  border: 1px solid #40536f !important;
+}
+
+html.platform-windows.theme-dark .skill-details-modal .n-card__content,
+html.platform-windows.theme-dark .detail-modal .n-card__content {
+  background: transparent !important;
+}
+
+html.platform-windows.theme-dark .skill-details-modal :is(.summary-row, .summary-row strong, .children-section h3, .child-head strong) {
+  color: #f0f5ff !important;
+}
+
+html.platform-windows.theme-dark .skill-details-modal :is(.summary-label, .summary-row-block p, .child-card p, .child-card > span) {
+  color: #b7c9df !important;
+}
+
+html.platform-windows.theme-dark .skill-details-modal .child-card {
+  background: #1c2b42 !important;
+  border-color: #40536f !important;
+}
+
+html.platform-windows.theme-dark .detail-modal .detail-tabs .n-tabs-nav {
+  background: #1c2b42 !important;
+  border-color: #40536f !important;
+}
+
+html.platform-windows.theme-dark .detail-modal .detail-tabs .n-tabs-tab {
+  color: #b8c8dd !important;
+}
+
+html.platform-windows.theme-dark .detail-modal .detail-tabs .n-tabs-tab--active,
+html.platform-windows.theme-dark .detail-modal .detail-tabs .n-tabs-tab:hover {
+  color: #c5ddff !important;
+  background: #294367 !important;
+}
+
+html.platform-windows.theme-dark .detail-modal :is(.knowledge-state-row, .permission-head, .grant-actions, .metadata-readonly span, .file-actions p, .grants small) {
+  color: #adbed5 !important;
+  border-color: #40536f !important;
+}
+
+html.platform-windows.theme-dark .detail-modal .grants > div,
+html.platform-windows.theme-dark .detail-modal .file-actions {
+  border-color: #40536f !important;
+}
+
+html.platform-windows.theme-dark .detail-modal .metadata-readonly strong {
+  color: #f0f5ff !important;
+}
+
+html.platform-windows.theme-dark .detail-modal .feedback .replies,
+html.platform-windows.theme-dark .detail-modal .feedback .composer {
+  background: #1c2b42 !important;
+  border-color: #40536f !important;
+}

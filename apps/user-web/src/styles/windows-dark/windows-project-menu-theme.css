@@ -1,0 +1,96 @@
+/* Windows-only dark user-web styles. */
+/* Windows dark project picker. Preserve the disabled state without hiding its
+   title or reason, and keep the footer within the same surface hierarchy. */
+html.platform-windows.theme-dark .app-shell .workspace-menu:has(.workspace-choices) {
+  background: #19283d !important;
+  border-color: #405875 !important;
+  color: #e9f1fd !important;
+  box-shadow: 0 24px 52px rgba(2, 8, 18, .42) !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-heading {
+  padding: 16px 18px 12px !important;
+  border-bottom: 1px solid #344a65 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-heading strong {
+  color: #f2f7ff !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices :is(.choice-heading span, .choice-state) {
+  color: #b6c7dd !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-list {
+  display: grid !important;
+  gap: 3px !important;
+  padding: 8px !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item {
+  min-height: 58px !important;
+  background: transparent !important;
+  color: #e4edfa !important;
+  transition: background-color 180ms ease, border-color 180ms ease !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item:hover:not(:disabled),
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item:focus-visible {
+  background: #294565 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item.selected {
+  background: #254465 !important;
+  box-shadow: inset 3px 0 0 #81b4f2 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item:disabled {
+  opacity: 1 !important;
+  background: #1c2c42 !important;
+  cursor: not-allowed !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item:disabled .choice-copy strong {
+  color: #b8c8dc !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-copy small {
+  color: #a9bdd5 !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .folder-mark {
+  background: #273c57 !important;
+  color: #aac6e7 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item:disabled .folder-mark {
+  background: #29394e !important;
+  color: #94abc6 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .add-project {
+  min-height: 48px !important;
+  background: #1e3551 !important;
+  border-color: #405875 !important;
+  color: #c3ddff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-choices .add-project:hover,
+html.platform-windows.theme-dark .app-shell .workspace-choices .add-project:focus-visible {
+  background: #2b4c72 !important;
+  color: #fff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.platform-windows.theme-dark .app-shell .workspace-choices .choice-item {
+    transition-duration: 0.001ms !important;
+  }
+}

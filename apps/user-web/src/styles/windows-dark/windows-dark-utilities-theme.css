@@ -1,0 +1,63 @@
+/* Windows-only dark user-web styles. */
+/* Gaps in user-web's dark utility map, limited to Windows clients. */
+html.platform-windows.theme-dark .text-slate-950,
+html.platform-windows.theme-dark .text-gray-950 {
+  color: #edf4ff !important;
+}
+
+html.platform-windows.theme-dark .bg-gray-50\/50,
+html.platform-windows.theme-dark .bg-gray-50\/60,
+html.platform-windows.theme-dark .bg-slate-50\/80,
+html.platform-windows.theme-dark .bg-slate-50\/95 {
+  background-color: rgba(27, 42, 63, .95) !important;
+}
+
+html.platform-windows.theme-dark :is(.bg-indigo-50, .bg-indigo-100, .bg-purple-50, .bg-violet-100, .bg-cyan-50) {
+  background-color: #253653 !important;
+}
+
+html.platform-windows.theme-dark :is(.bg-green-50, .bg-emerald-50) {
+  background-color: #183e37 !important;
+}
+
+html.platform-windows.theme-dark :is(.bg-amber-50, .bg-amber-100, .bg-yellow-50, .bg-orange-50) {
+  background-color: #43351f !important;
+}
+
+html.platform-windows.theme-dark :is(.bg-red-50, .bg-rose-50) {
+  background-color: #462b39 !important;
+}
+
+html.platform-windows.theme-dark :is(.text-indigo-600, .text-purple-600, .text-cyan-600) {
+  color: #a9c5ff !important;
+}
+
+/* Light-mode callouts are dark surfaces on Windows. Their stronger text
+   utilities must change with the surface, not retain near-black ink. */
+html.platform-windows.theme-dark :is(.text-blue-800, .text-blue-900, .text-indigo-700, .text-indigo-800, .text-indigo-900, .text-purple-700, .text-purple-800, .text-purple-900, .text-cyan-700, .text-cyan-800, .text-cyan-900, .text-violet-600, .text-violet-700) {
+  color: #bdd5ff !important;
+}
+
+html.platform-windows.theme-dark :is(.text-green-600, .text-emerald-600) {
+  color: #86e4b8 !important;
+}
+
+html.platform-windows.theme-dark :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) {
+  color: #a5ecd1 !important;
+}
+
+html.platform-windows.theme-dark :is(.text-amber-600, .text-orange-600) {
+  color: #ffd28a !important;
+}
+
+html.platform-windows.theme-dark :is(.text-amber-700, .text-amber-800, .text-amber-900, .text-amber-950, .text-yellow-700, .text-yellow-800, .text-yellow-900, .text-orange-700, .text-orange-800, .text-orange-900) {
+  color: #ffe0aa !important;
+}
+
+html.platform-windows.theme-dark :is(.text-red-600, .text-rose-600) {
+  color: #ffb2c0 !important;
+}
+
+html.platform-windows.theme-dark :is(.text-red-700, .text-red-800, .text-red-900, .text-rose-700, .text-rose-800, .text-rose-900) {
+  color: #ffc5ce !important;
+}

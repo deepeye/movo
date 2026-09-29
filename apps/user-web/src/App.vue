@@ -7,6 +7,7 @@ import TokenUsagePage from './components/TokenUsagePage.vue'
 import ProfileModal from './components/ProfileModal.vue'
 import productUiExtension from '@movo-product-extension'
 import DesktopWindowChrome from './components/desktop/DesktopWindowChrome.vue'
+import WindowsTitleBar from './components/desktop/WindowsTitleBar.vue'
 import ChatSessionHeader from './components/chat/ChatSessionHeader.vue'
 import DesktopServerSetup from './components/desktop/DesktopServerSetup.vue'
 import type { DesktopToolLauncherKind } from './components/desktop/desktopToolTabs'
@@ -28,7 +29,7 @@ import { deleteSkill, enrichSkillDraft, generateSkill, listSkills, updateSkill, 
 import { joinSessionShare, type SessionShareError } from './api/sessionSharing'
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { registerProductMessages, setLocale as setAppLocale, t, useLocale, type Locale } from './composables/i18n'
-import { naiveThemeOverrides } from './composables/naiveThemeOverrides'
+import { themeOverridesForPlatform } from './composables/naiveThemeOverrides'
 import { getBrowserTimezone, setAppTimezone } from './composables/appTimezone'
 import { buildAdminSsoUrl } from './utils/adminUrl'
 import { sortSessionsByRecentActivity } from './utils/sessionOrdering'
@@ -91,6 +92,11 @@ const themeMode = ref<ThemeMode>(
     : 'system',
 )
 const isDarkTheme = ref(false)
+const isWindowsDesktop = capabilities.isDesktop && document.documentElement.classList.contains('platform-windows')
+const windowsSidebarCollapsed = ref(false)
+const platformThemeOverrides = computed(() => themeOverridesForPlatform(
+  isDarkTheme.value && document.documentElement.classList.contains('platform-windows'),
+))
 let systemThemeMedia: MediaQueryList | null = null
 const themeOptions = [
   { value: 'light' as const, langKey: 'ui.theme.light', icon: 'sun' },
@@ -124,7 +130,7 @@ const pendingSessionShareToken = ref<string | null>(null)
 // themed to match the app's provider.
 const shareToastConfigProviderProps = computed(() => ({
   theme: isDarkTheme.value ? darkTheme : null,
-  themeOverrides: naiveThemeOverrides,
+  themeOverrides: platformThemeOverrides.value,
 }))
 const { message: shareToast } = createDiscreteApi(['message'], { configProviderProps: shareToastConfigProviderProps })
 const sessionSearchOpen = ref(false)
@@ -2061,7 +2067,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <n-config-provider :theme="isDarkTheme ? darkTheme : null" :theme-overrides="naiveThemeOverrides">
+  <n-config-provider :theme="isDarkTheme ? darkTheme : null" :theme-overrides="platformThemeOverrides">
   <n-message-provider>
   <n-notification-provider>
   <n-dialog-provider>
@@ -2081,7 +2087,7 @@ onBeforeUnmount(() => {
   <div
     v-else
     class="app-shell relative flex h-screen bg-white text-gray-800 font-sans"
-    :class="{ 'app-shell--desktop': capabilities.isDesktop }"
+    :class="{ 'app-shell--desktop': capabilities.isDesktop, 'app-shell--windows-desktop': isWindowsDesktop, 'app-shell--windows-sidebar-collapsed': isWindowsDesktop && windowsSidebarCollapsed }"
   >
     <CreateProjectDialog
       v-if="canUseCode"
@@ -2095,8 +2101,19 @@ onBeforeUnmount(() => {
       @create="commitProjectCreate"
       @close="closeProjectCreate"
     />
+    <WindowsTitleBar
+      v-if="isWindowsDesktop"
+      :collapsed="windowsSidebarCollapsed"
+      :dark="isDarkTheme"
+      :locale="locale === 'en' ? 'en' : 'zh'"
+      @toggle-sidebar="windowsSidebarCollapsed = !windowsSidebarCollapsed"
+      @new-chat="handleSidebarAction('plus')"
+      @add-project="createProject"
+    />
     <DesktopWindowChrome
       v-if="capabilities.isDesktop"
+      :windows-title-bar="isWindowsDesktop"
+      :sidebar-collapsed="windowsSidebarCollapsed"
       :title="desktopWindowTitle"
       :show-back="currentView === 'skills'"
       :back-label="t('skills.back_to_chat')"
@@ -3177,6 +3194,15 @@ onBeforeUnmount(() => {
 .app-shell--desktop > .app-sidebar,
 .app-shell--desktop > .app-main {
   padding-top: 48px;
+}
+
+.app-shell--windows-desktop > .app-sidebar,
+.app-shell--windows-desktop > .app-main {
+  padding-top: 88px;
+}
+
+.app-shell--windows-sidebar-collapsed > .app-sidebar {
+  display: none;
 }
 
 .desktop-settings-modal,

@@ -1,0 +1,72 @@
+/* Windows-only dark user-web styles. */
+/* Scheduled tasks and usage retain light-only scoped colors upstream. */
+html.platform-windows.theme-dark .app-shell :is(.tasks-page, .usage-page) {
+  background: #111b2b !important;
+  color: #e5eefb !important;
+}
+
+html.platform-windows.theme-dark .app-shell :is(.tasks-header, .usage-header, .tasks-page .shell-card, .tasks-page .task-card, .usage-list-card) {
+  background: #1a2940 !important;
+  border-color: #3d5574 !important;
+  color: #e5eefb !important;
+}
+
+html.platform-windows.theme-dark .app-shell :is(.tasks-header, .usage-header) h1,
+html.platform-windows.theme-dark .app-shell .tasks-page :is(.card-title, .empty-title),
+html.platform-windows.theme-dark .app-shell .usage-page :is(.text-slate-900, .text-slate-950) {
+  color: #f1f6ff !important;
+}
+
+html.platform-windows.theme-dark .app-shell .tasks-page :is(.card-time, .card-desc, .card-meta, .meta-item, .card-switch-label, .empty-desc),
+html.platform-windows.theme-dark .app-shell .usage-page :is(.usage-header p, .usage-updated, .text-slate-500, .text-slate-400) {
+  color: #b2c5dd !important;
+}
+
+html.platform-windows.theme-dark .app-shell .tasks-page :is(.task-card-disabled, .empty-shell, .card-switch) {
+  background: #182639 !important;
+  border-color: #3d5574 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .tasks-page .empty-visual span {
+  background: #29415f !important;
+  color: #c4dcff !important;
+}
+
+html.platform-windows.theme-dark .app-shell .tasks-page .task-card:hover {
+  background: #243b59 !important;
+  border-color: #6e9bd7 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .usage-page .usage-content > div:first-child .bg-white {
+  background: #1a2940 !important;
+  border-color: #3d5574 !important;
+  box-shadow: none !important;
+}
+
+html.platform-windows.theme-dark .app-shell .usage-page .bg-slate-900 {
+  background: #243c5e !important;
+  border-color: #567ba9 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .usage-page :is(thead, tbody),
+html.platform-windows.theme-dark .app-shell .usage-page tbody tr {
+  background: #1a2940 !important;
+  border-color: #344b69 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .usage-page thead {
+  background: #213650 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .usage-page tbody tr:hover {
+  background: #294361 !important;
+}
+
+html.platform-windows.theme-dark .app-shell :is(.tasks-page, .usage-page) :is(.n-input, .n-base-selection) {
+  --n-color: #13233a !important;
+  --n-color-active: #13233a !important;
+  --n-text-color: #edf4ff !important;
+  --n-placeholder-color: #a8bdd7 !important;
+  --n-border: 1px solid #456080 !important;
+  --n-border-hover: 1px solid #7aa8e5 !important;
+}

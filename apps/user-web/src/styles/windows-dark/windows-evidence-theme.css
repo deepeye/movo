@@ -1,0 +1,56 @@
+/* Windows-only dark user-web styles. */
+/* EvidenceDrawer teleports to body, outside .app-shell. This stylesheet
+   is injected only by the Windows desktop host. */
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] {
+  background: #111c2e !important;
+  color: #e8f0fc !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] header {
+  border-color: #344b69 !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] .text-slate-950 {
+  color: #edf4ff !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] .text-slate-600,
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] .text-slate-500 {
+  color: #b3c5dd !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] .grid > .rounded-lg,
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] article {
+  background: #18273c !important;
+  border-color: #3b5270 !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] .bg-slate-100 {
+  background: #2b3e58 !important;
+  color: #d9e6f6 !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] .bg-blue-50 {
+  background: #203e67 !important;
+  color: #b7d7ff !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] button.text-blue-600 {
+  color: #8fc4ff !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] button.text-blue-600:hover,
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] button.text-blue-600:focus-visible {
+  color: #d2e8ff !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] button[aria-label]:not(.text-blue-600):hover {
+  background: #2b3e58 !important;
+  color: #f2f7ff !important;
+}
+
+html.platform-windows.theme-dark aside[role="dialog"][aria-modal="true"] li.bg-amber-50 {
+  background: #43341e !important;
+  border-color: #8d6933 !important;
+  color: #ffe3aa !important;
+}

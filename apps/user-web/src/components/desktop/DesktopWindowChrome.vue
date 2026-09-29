@@ -11,6 +11,8 @@ import type { DesktopToolTabKind } from './desktopToolTabs'
 
 defineProps<{
   title: string
+  windowsTitleBar?: boolean
+  sidebarCollapsed?: boolean
   showBack?: boolean
   backLabel?: string
   chatActions?: boolean
@@ -49,7 +51,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <header class="desktop-window-chrome" aria-label="Desktop window header">
+  <header class="desktop-window-chrome" :class="{ 'desktop-window-chrome--windows': windowsTitleBar, 'desktop-window-chrome--collapsed': windowsTitleBar && sidebarCollapsed }" aria-label="Desktop window header">
     <div class="desktop-window-chrome__sidebar">
       <span class="desktop-window-chrome__brand">
         <img src="/movo-logo.png" alt="" />
@@ -162,6 +164,11 @@ const emit = defineEmits<{
   -webkit-app-region: drag;
   user-select: none;
 }
+
+.desktop-window-chrome--windows { top:40px; }
+.desktop-window-chrome--windows .desktop-window-chrome__sidebar { padding-left:14px; }
+.desktop-window-chrome--collapsed { grid-template-columns:0 minmax(0,1fr); }
+.desktop-window-chrome--collapsed .desktop-window-chrome__sidebar { overflow:hidden; padding:0; border-right:0; }
 
 .desktop-window-chrome__sidebar,
 .desktop-window-chrome__content {
@@ -305,5 +312,6 @@ const emit = defineEmits<{
   .desktop-window-chrome {
     grid-template-columns: 220px minmax(0, 1fr);
   }
+  .desktop-window-chrome--collapsed { grid-template-columns:0 minmax(0,1fr); }
 }
 </style>

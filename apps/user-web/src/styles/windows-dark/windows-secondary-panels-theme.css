@@ -1,0 +1,51 @@
+/* Windows-only dark user-web styles. */
+/* Windows-only dark treatment for settings, knowledge dialogs, shares and tool tabs. */
+html.platform-windows.theme-dark .shortcut-panel .panel-head h3,
+html.platform-windows.theme-dark .group-card .entry-name strong,
+html.platform-windows.theme-dark .member-info strong,
+html.platform-windows.theme-dark .tree-frame .target strong { color: #edf4ff !important; }
+html.platform-windows.theme-dark .shortcut-panel .panel-head p,
+html.platform-windows.theme-dark .group-card .entry-name small,
+html.platform-windows.theme-dark .member-info span,
+html.platform-windows.theme-dark .member-role,
+html.platform-windows.theme-dark .intro,
+html.platform-windows.theme-dark .hint { color: #aebed3 !important; }
+html.platform-windows.theme-dark .group-card,
+html.platform-windows.theme-dark .group-card.locked,
+html.platform-windows.theme-dark .tree-frame,
+html.platform-windows.theme-dark .member-row,
+html.platform-windows.theme-dark .dropzone,
+html.platform-windows.theme-dark .preview-pane {
+  background: #1b2a40 !important;
+  border-color: #3c5372 !important;
+}
+html.platform-windows.theme-dark .preview-pane iframe { background: #fff !important; }
+html.platform-windows.theme-dark .preview-pane .preview-message { color: #bed0e6 !important; }
+html.platform-windows.theme-dark .group-card .entry-row,
+html.platform-windows.theme-dark .files > div { border-color: #344a66 !important; }
+html.platform-windows.theme-dark .group-card .shortcut-icon-button { color: #ccdaec !important; }
+html.platform-windows.theme-dark .group-card .shortcut-icon-button:hover,
+html.platform-windows.theme-dark .group-card .shortcut-action-button:hover,
+html.platform-windows.theme-dark .shortcut-panel .shortcut-action-button:hover {
+  background: #284467 !important;
+  color: #eaf3ff !important;
+}
+html.platform-windows.theme-dark .tree-frame .n-tree-node-content--selected,
+html.platform-windows.theme-dark .dropzone.dragging,
+html.platform-windows.theme-dark .target { background: #254775 !important; color: #e7f0fb !important; }
+html.platform-windows.theme-dark .status-pill.status-success { background: #173e37 !important; color: #8be5b4 !important; border-color: #39816b !important; }
+html.platform-windows.theme-dark .status-pill.status-learning { background: #213e67 !important; color: #a9ceff !important; border-color: #4d79b3 !important; }
+html.platform-windows.theme-dark .status-pill.status-failed { background: #503139 !important; color: #ffb7bc !important; border-color: #a65c68 !important; }
+html.platform-windows.theme-dark .status-pill.status-revoked,
+html.platform-windows.theme-dark .status-pill.status-deleted { background: #283649 !important; color: #b7c6d9 !important; border-color: #4b617d !important; }
+html.platform-windows.theme-dark .tool-tab-bar,
+html.platform-windows.theme-dark .tool-tab-actions { background: #142238 !important; border-color: #3b5270 !important; }
+html.platform-windows.theme-dark .tool-tab { color: #adc0d9 !important; }
+html.platform-windows.theme-dark .tool-tab:hover,
+html.platform-windows.theme-dark .new-tab:hover,
+html.platform-windows.theme-dark .panel-close:hover,
+html.platform-windows.theme-dark .tab-close:hover { background: #283e5d !important; color: #f4f8ff !important; }
+html.platform-windows.theme-dark .tool-tab.active { background: #223c5f !important; border-color: #4c6d98 !important; color: #eff6ff !important; }
+html.platform-windows.theme-dark .new-tab-menu { background: #1b2c43 !important; border-color: #46617f !important; }
+html.platform-windows.theme-dark .new-tab-menu button { color: #d8e5f6 !important; }
+html.platform-windows.theme-dark .new-tab-menu button:hover { background: #2a4a73 !important; color: #fff !important; }

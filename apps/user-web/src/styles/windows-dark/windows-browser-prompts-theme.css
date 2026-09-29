@@ -1,0 +1,68 @@
+/* Windows-only dark user-web styles. */
+/* Browser workspace and in-task prompts use light-only scoped colors. */
+html.platform-windows.theme-dark .browser-mini,
+html.platform-windows.theme-dark .recording-review-dialog,
+html.platform-windows.theme-dark .electron-browser {
+  background: #192a40 !important;
+  color: #e4eefb !important;
+  border-color: #425b79 !important;
+}
+
+html.platform-windows.theme-dark .browser-mini :is(.browser-mini__heading strong, .browser-mini__actions button:hover),
+html.platform-windows.theme-dark .recording-review-dialog :is(h2, .workflow-name strong, .step-label),
+html.platform-windows.theme-dark .electron-browser :is(.record-command:hover, .resume-command:hover, .panel-close:hover, .icon-command:hover) {
+  color: #edf4ff !important;
+}
+
+html.platform-windows.theme-dark .browser-mini :is(.browser-mini__heading span, .browser-mini__actions button),
+html.platform-windows.theme-dark .recording-review-dialog :is(.workflow-name span, .dialog-state),
+html.platform-windows.theme-dark .electron-browser :is(.owner-label, .resume-command, .panel-close, .icon-command, .record-command) {
+  color: #b5c8df !important;
+}
+
+html.platform-windows.theme-dark .recording-review-dialog :is(.workflow-name, .step-index, .dialog-footer .secondary),
+html.platform-windows.theme-dark .electron-browser :is(.recording-message, .record-command:hover, .resume-command:hover, .panel-close:hover, .icon-command:hover),
+html.platform-windows.theme-dark .browser-mini .browser-mini__actions button:hover {
+  background: #284463 !important;
+  border-color: #507096 !important;
+}
+
+html.platform-windows.theme-dark .recording-review-dialog .validation-error,
+html.platform-windows.theme-dark .electron-browser .record-command.active {
+  background: #4a2d38 !important;
+  color: #ffc3ce !important;
+}
+
+html.platform-windows.theme-dark .recording-review-dialog .parameter-tag {
+  background: #1c473c !important;
+  color: #a6eacb !important;
+}
+
+html.platform-windows.theme-dark .approval-panel {
+  background: #332b21 !important;
+  color: #f3e7d3 !important;
+  border-color: #8a663d !important;
+}
+
+html.platform-windows.theme-dark .approval-panel :is(.approval-heading, .approval-description) {
+  color: #f4e8d5 !important;
+}
+
+html.platform-windows.theme-dark .approval-panel :is(.approval-icon, .approval-risk) {
+  background: #56432a !important;
+  color: #ffe0a1 !important;
+}
+
+html.platform-windows.theme-dark .approval-panel .approval-button.secondary {
+  background: #3a4050 !important;
+  color: #eef3fb !important;
+  border-color: #657188 !important;
+}
+
+html.platform-windows.theme-dark .approval-panel .approval-button.secondary:hover {
+  background: #4b5870 !important;
+}
+
+html.platform-windows.theme-dark .approval-panel .approval-error {
+  color: #ffadb9 !important;
+}

@@ -1,0 +1,20 @@
+/* Shared Windows browser + desktop dark theme. Every module is platform-gated. */
+@import './windows-desktop-theme.css';
+@import './windows-dark-utilities-theme.css';
+@import './windows-secondary-actions-theme.css';
+@import './windows-resources-theme.css';
+@import './windows-chat-controls-theme.css';
+@import './windows-execution-theme.css';
+@import './windows-evidence-theme.css';
+@import './windows-source-viewer-theme.css';
+@import './windows-activity-pages-theme.css';
+@import './windows-presentation-theme.css';
+@import './windows-browser-prompts-theme.css';
+@import './windows-code-details-theme.css';
+@import './windows-project-menu-theme.css';
+@import './windows-skill-editor-theme.css';
+@import './windows-workflow-config-theme.css';
+@import './windows-knowledge-detail-theme.css';
+@import './windows-tools-editor-theme.css';
+@import './windows-skills-details-theme.css';
+@import './windows-secondary-panels-theme.css';

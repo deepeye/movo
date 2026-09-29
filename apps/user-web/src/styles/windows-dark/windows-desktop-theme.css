@@ -1,0 +1,233 @@
+/* Windows-only dark user-web styles. */
+/* Shared by Windows browser and Electron. macOS never receives the platform class. */
+
+/* The desktop chat has a hard-coded white workspace while the shared dark
+   utilities turn its text light. Keep both sides of that contrast pair dark. */
+html.platform-windows.theme-dark .browser-workspace,
+html.platform-windows.theme-dark .app-main {
+  background: #111827 !important;
+}
+
+html.platform-windows.theme-dark .assistant-markdown {
+  color: #e2e8f0 !important;
+}
+
+html.platform-windows.theme-dark .browser-workspace .bg-blue-50 {
+  background-color: #1e3a5f !important;
+}
+
+html.platform-windows.theme-dark .browser-workspace .text-slate-800,
+html.platform-windows.theme-dark .browser-workspace .text-gray-900 {
+  color: #f1f5f9 !important;
+}
+
+html.platform-windows.theme-dark .desktop-window-chrome__sidebar {
+  background: #0b1220 !important;
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .desktop-window-chrome__content {
+  background: #111827 !important;
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .desktop-window-chrome__brand,
+html.platform-windows.theme-dark .desktop-window-chrome__title {
+  color: #e2e8f0 !important;
+}
+
+html.platform-windows.theme-dark .desktop-window-chrome__icon-button,
+html.platform-windows.theme-dark .desktop-window-chrome__back-button {
+  color: #94a3b8 !important;
+}
+
+html.platform-windows.theme-dark .code-draft-context,
+html.platform-windows.theme-dark .prompt-guide-tab,
+html.platform-windows.theme-dark .prompt-guide-item,
+html.platform-windows.theme-dark .prompt-guide-arc,
+html.platform-windows.theme-dark .prompt-guide-notice {
+  background: #182131 !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html.platform-windows.theme-dark .code-draft-context .composer-context,
+html.platform-windows.theme-dark .code-draft-context .context-segment {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+html.platform-windows.theme-dark .workspace-menu,
+html.platform-windows.theme-dark .workspace-menu .detail-grid > div,
+html.platform-windows.theme-dark .workspace-menu .menu-actions button,
+html.platform-windows.theme-dark .workspace-menu .path-row button {
+  background: #182131 !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html.platform-windows.theme-dark .workspace-menu .workspace-heading strong,
+html.platform-windows.theme-dark .workspace-menu .detail-grid strong,
+html.platform-windows.theme-dark .workspace-menu .mode-options button {
+  color: #e2e8f0 !important;
+}
+
+html.platform-windows.theme-dark .prompt-guide-tab:hover,
+html.platform-windows.theme-dark .prompt-guide-tab.is-active,
+html.platform-windows.theme-dark .prompt-guide-item:hover {
+  background: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+  color: #bfdbfe !important;
+}
+
+html.platform-windows.theme-dark .prompt-guide-notice-title {
+  color: #f1f5f9 !important;
+}
+
+html.platform-windows.theme-dark .prompt-guide-notice-desc,
+html.platform-windows.theme-dark .prompt-guide-lock {
+  color: #a8b7ca !important;
+}
+
+html.platform-windows.theme-dark .prompt-guide-arc::before {
+  opacity: 0.12 !important;
+}
+
+/* A selected sidebar item must remain distinguishable from the sidebar. */
+html.platform-windows.theme-dark .app-sidebar [role="button"].bg-white,
+html.platform-windows.theme-dark .app-sidebar button.bg-white {
+  background-color: #1e3a5f !important;
+  color: #bfdbfe !important;
+}
+
+html.platform-windows.theme-dark .app-sidebar [role="button"].bg-white .text-blue-700,
+html.platform-windows.theme-dark .app-sidebar button.bg-white .text-blue-700 {
+  color: #bfdbfe !important;
+}
+
+html.platform-windows.theme-dark .app-sidebar [class*="hover:bg-gray-200"]:hover {
+  background-color: #253044 !important;
+}
+
+/* Personalization uses fixed light surfaces inside an otherwise dark modal. */
+html.platform-windows.theme-dark .personalization-layout,
+html.platform-windows.theme-dark .personalization-content {
+  background: #111827 !important;
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .personalization-nav {
+  background: #0b1220 !important;
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .personalization-nav-item {
+  color: #cbd5e1 !important;
+}
+
+html.platform-windows.theme-dark .personalization-nav-item:hover,
+html.platform-windows.theme-dark .personalization-nav-item.active {
+  background: #1e3a5f !important;
+  color: #bfdbfe !important;
+}
+
+/* Native desktop tabs otherwise retain a light strip above the dark content. */
+html.platform-windows.theme-dark .tool-tab-bar,
+html.platform-windows.theme-dark .tool-tab-actions {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .tool-tab,
+html.platform-windows.theme-dark .new-tab,
+html.platform-windows.theme-dark .panel-close {
+  color: #cbd5e1 !important;
+}
+
+html.platform-windows.theme-dark .tool-tab.active,
+html.platform-windows.theme-dark .tool-tab:hover,
+html.platform-windows.theme-dark .new-tab:hover,
+html.platform-windows.theme-dark .panel-close:hover {
+  background: #253044 !important;
+  color: #bfdbfe !important;
+}
+
+/* The knowledge screen has fixed white rows and dark text, independent of
+   Tailwind's theme utilities. Its desktop table also needs a flexible width. */
+html.platform-windows.theme-dark .knowledge-page {
+  background: #0f172a !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .content,
+html.platform-windows.theme-dark .knowledge-page .directories,
+html.platform-windows.theme-dark .knowledge-page .knowledge-row,
+html.platform-windows.theme-dark .knowledge-page .knowledge-main {
+  background: #111827 !important;
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .directory-row,
+html.platform-windows.theme-dark .knowledge-page .toggle {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .directory-row:hover,
+html.platform-windows.theme-dark .knowledge-page .directory-row.active {
+  background: #1e3a5f !important;
+  color: #bfdbfe !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .directory-actions,
+html.platform-windows.theme-dark .knowledge-page .directory-line .toggle {
+  background: #111827 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .directory-separator,
+html.platform-windows.theme-dark .knowledge-page .directory-line::before {
+  border-color: #334155 !important;
+  background-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .directory-row.uncategorized {
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .list-head,
+html.platform-windows.theme-dark .knowledge-page .list-head > span:first-child {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .knowledge-list {
+  border-color: #334155 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .knowledge-row:hover,
+html.platform-windows.theme-dark .knowledge-page .knowledge-row:hover .knowledge-main {
+  background: #1e293b !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .knowledge-main strong {
+  color: #f1f5f9 !important;
+}
+
+html.platform-windows.theme-dark .knowledge-page .knowledge-main > span,
+html.platform-windows.theme-dark .knowledge-page .context-text,
+html.platform-windows.theme-dark .knowledge-page .knowledge-row time,
+html.platform-windows.theme-dark .knowledge-page .breadcrumb,
+html.platform-windows.theme-dark .knowledge-page .pagination {
+  color: #a8b7ca !important;
+}
+
+@media (max-width: 1599px) {
+  html.platform-windows.theme-dark .knowledge-page .knowledge-list {
+    width: 100% !important;
+  }
+
+  html.platform-windows.theme-dark .knowledge-page .list-head,
+html.platform-windows.theme-dark .knowledge-page .knowledge-row {
+    grid-template-columns: minmax(280px, 2fr) minmax(110px, 1fr) minmax(120px, 1fr) minmax(130px, 1fr) minmax(150px, 1fr) !important;
+    gap: 8px !important;
+  }
+}

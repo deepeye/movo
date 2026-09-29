@@ -1,0 +1,40 @@
+/* Windows-only dark user-web styles. */
+/* Windows desktop dark chrome for code-project details. File previews keep their own content colors. */
+html.platform-windows.theme-dark .project-panel {
+  background: #111b2b !important;
+  border-left-color: #34445c !important;
+  box-shadow: -12px 0 32px #02061755 !important;
+}
+html.platform-windows.theme-dark .project-dialog .field-label,
+html.platform-windows.theme-dark .project-dialog .mode-copy strong {
+  color: #dce7f5 !important;
+}
+html.platform-windows.theme-dark .project-dialog .folder-details,
+html.platform-windows.theme-dark .project-dialog .mode-options .n-radio {
+  background: #19273a !important;
+  border-color: #384b65 !important;
+}
+html.platform-windows.theme-dark .project-dialog .folder-details strong { color: #e6eef8 !important; }
+html.platform-windows.theme-dark .project-dialog .folder-details span,
+html.platform-windows.theme-dark .project-dialog .mode-copy small { color: #a8b8cd !important; }
+html.platform-windows.theme-dark .project-dialog .mode-options .n-radio--checked {
+  background: #1b3760 !important;
+  border-color: #659cf2 !important;
+}
+html.platform-windows.theme-dark .changes .tree-scroll button,
+html.platform-windows.theme-dark .file-browser nav .tree-node button { color: #cbd9eb !important; }
+html.platform-windows.theme-dark .changes .tree-scroll button:hover,
+html.platform-windows.theme-dark .file-browser nav .tree-node button:hover {
+  background: #243650 !important;
+  color: #f4f8ff !important;
+}
+html.platform-windows.theme-dark .changes .tree-scroll button.selected,
+html.platform-windows.theme-dark .file-browser nav .tree-node button.selected {
+  background: #254573 !important;
+  color: #eaf3ff !important;
+}
+html.platform-windows.theme-dark .changes .tree-scroll .status.tone-added { color: #7dddac !important; }
+html.platform-windows.theme-dark .changes .tree-scroll .status.tone-modified { color: #ffd17c !important; }
+html.platform-windows.theme-dark .changes .tree-scroll .status.tone-deleted,
+html.platform-windows.theme-dark .changes .tree-scroll .status.tone-conflict { color: #ff9b9b !important; }
+html.platform-windows.theme-dark .changes .tree-scroll .status.tone-renamed { color: #beaaff !important; }
