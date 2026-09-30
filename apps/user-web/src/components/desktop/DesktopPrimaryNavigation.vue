@@ -35,7 +35,7 @@ const items = computed<NavigationItem[]>(() => [
   { id: 'scheduled', zh: '定时', en: 'Tasks', visible: true, badge: 0 },
   { id: 'skills', zh: 'Skill', en: 'Skills', visible: props.skillsAvailable, badge: props.skillBadge },
   { id: 'tools', zh: 'MCP', en: 'MCP', visible: props.toolsAvailable, badge: 0 },
-  { id: 'knowledge', zh: '知识', en: 'Knowledge', visible: props.knowledgeAvailable, badge: props.knowledgeBadge },
+  { id: 'knowledge', zh: '知识库', en: 'Knowledge Base', visible: props.knowledgeAvailable, badge: props.knowledgeBadge },
 ])
 </script>
 
@@ -50,7 +50,7 @@ const items = computed<NavigationItem[]>(() => [
         :class="{ active: active === item.id }"
         :aria-current="active === item.id ? 'page' : undefined"
         :aria-label="locale === 'en' ? item.en : item.zh"
-        :title="locale === 'en' ? item.en : item.zh"
+        :data-tooltip="locale === 'en' ? item.en : item.zh"
         @click="emit('navigate', item.id)"
       >
         <span class="desktop-primary-nav__icon" aria-hidden="true">
@@ -60,7 +60,6 @@ const items = computed<NavigationItem[]>(() => [
           <svg v-else-if="item.id === 'tools'" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="7" r="2"/><circle cx="20" cy="7" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="m6 8 3.5 2.5M18 8l-3.5 2.5M7 18l3-3.5m7 3.5-3-3.5"/></svg>
           <svg v-else viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v18H7.5A2.5 2.5 0 0 0 5 22V4.5Z"/><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20"/></svg>
         </span>
-        <span class="desktop-primary-nav__label">{{ locale === 'en' ? item.en : item.zh }}</span>
         <span v-if="item.badge > 0" class="desktop-primary-nav__badge" aria-hidden="true">{{ item.badge > 99 ? '99+' : item.badge }}</span>
       </button>
     </div>
@@ -69,15 +68,25 @@ const items = computed<NavigationItem[]>(() => [
 
 <style scoped>
 .desktop-primary-nav {
+  --desktop-nav-bg: #f3f6fa;
+  --desktop-nav-border: #e2e8f0;
+  --desktop-nav-ink: #64748b;
+  --desktop-nav-hover-bg: #e6edf7;
+  --desktop-nav-hover-ink: #245da8;
+  --desktop-nav-active-bg: #fff;
+  --desktop-nav-active-ink: #1d5fbd;
+  --desktop-nav-active-border: #dce5f2;
+  --desktop-nav-tooltip-bg: #172033;
+  --desktop-nav-tooltip-ink: #f8fafc;
   display: flex;
   width: 64px;
   min-height: 0;
   flex: none;
   flex-direction: column;
   padding: 10px 7px 12px;
-  border-right: 1px solid #e2e8f0;
-  color: #64748b;
-  background: #f3f6fa;
+  border-right: 1px solid var(--desktop-nav-border);
+  color: var(--desktop-nav-ink);
+  background: var(--desktop-nav-bg);
 }
 
 .desktop-primary-nav__items {
@@ -90,12 +99,10 @@ const items = computed<NavigationItem[]>(() => [
   position: relative;
   display: flex;
   width: 50px;
-  min-height: 52px;
+  min-height: 48px;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 3px;
-  padding: 5px 2px;
+  padding: 4px;
   border: 0;
   border-radius: 12px;
   color: inherit;
@@ -105,14 +112,14 @@ const items = computed<NavigationItem[]>(() => [
 }
 
 .desktop-primary-nav__item:hover {
-  color: #245da8;
-  background: #e6edf7;
+  color: var(--desktop-nav-hover-ink);
+  background: var(--desktop-nav-hover-bg);
 }
 
 .desktop-primary-nav__item.active {
-  color: #1d5fbd;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, .08), inset 0 0 0 1px #dce5f2;
+  color: var(--desktop-nav-active-ink);
+  background: var(--desktop-nav-active-bg);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .08), inset 0 0 0 1px var(--desktop-nav-active-border);
 }
 
 .desktop-primary-nav__item:focus-visible {
@@ -137,14 +144,31 @@ const items = computed<NavigationItem[]>(() => [
   stroke-linejoin: round;
 }
 
-.desktop-primary-nav__label {
-  max-width: 46px;
-  overflow: hidden;
-  font-size: 10px;
-  font-weight: 650;
+.desktop-primary-nav__item::after {
+  position: absolute;
+  z-index: 60;
+  top: 50%;
+  left: calc(100% + 10px);
+  padding: 6px 9px;
+  border-radius: 7px;
+  color: var(--desktop-nav-tooltip-ink);
+  background: var(--desktop-nav-tooltip-bg);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .18);
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1.2;
-  text-overflow: ellipsis;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(2px, -50%);
+  transition: opacity 140ms ease, transform 140ms ease;
   white-space: nowrap;
+}
+
+.desktop-primary-nav__item:hover::after,
+.desktop-primary-nav__item:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 
 .desktop-primary-nav__badge {
@@ -165,28 +189,25 @@ const items = computed<NavigationItem[]>(() => [
   line-height: 11px;
 }
 
-:global(html.theme-dark) .desktop-primary-nav {
-  border-color: #28374d;
-  color: #91a3ba;
-  background: #0b1422;
+:global(html.platform-desktop.theme-dark) .desktop-primary-nav {
+  --desktop-nav-bg: #0b1422;
+  --desktop-nav-border: #28374d;
+  --desktop-nav-ink: #91a3ba;
+  --desktop-nav-hover-bg: #17263b;
+  --desktop-nav-hover-ink: #b9d6ff;
+  --desktop-nav-active-bg: #1b2b42;
+  --desktop-nav-active-ink: #b9d6ff;
+  --desktop-nav-active-border: #3a5575;
+  --desktop-nav-tooltip-bg: #e2e8f0;
+  --desktop-nav-tooltip-ink: #0f172a;
 }
 
-:global(html.theme-dark) .desktop-primary-nav__item:hover {
-  color: #b9d6ff;
-  background: #17263b;
-}
-
-:global(html.theme-dark) .desktop-primary-nav__item.active {
-  color: #9fc9ff;
-  background: #17263b;
-  box-shadow: inset 0 0 0 1px #304762;
-}
-
-:global(html.theme-dark) .desktop-primary-nav__badge {
+:global(html.platform-desktop.theme-dark) .desktop-primary-nav__badge {
   border-color: #0b1422;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .desktop-primary-nav__item { transition: none; }
+  .desktop-primary-nav__item,
+  .desktop-primary-nav__item::after { transition: none; }
 }
 </style>
