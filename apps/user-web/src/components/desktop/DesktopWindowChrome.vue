@@ -11,6 +11,7 @@ import type { DesktopToolTabKind } from './desktopToolTabs'
 
 defineProps<{
   title: string
+  navigationWidth?: number
   windowsTitleBar?: boolean
   sidebarCollapsed?: boolean
   showBack?: boolean
@@ -51,7 +52,16 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <header class="desktop-window-chrome" :class="{ 'desktop-window-chrome--windows': windowsTitleBar, 'desktop-window-chrome--collapsed': windowsTitleBar && sidebarCollapsed }" aria-label="Desktop window header">
+  <header
+    class="desktop-window-chrome"
+    :class="{
+      'desktop-window-chrome--windows': windowsTitleBar,
+      'desktop-window-chrome--collapsed': windowsTitleBar && sidebarCollapsed,
+      'desktop-window-chrome--compact-navigation': (navigationWidth || 260) <= 64,
+    }"
+    :style="{ '--desktop-navigation-width': `${navigationWidth || 260}px` }"
+    aria-label="Desktop window header"
+  >
     <div class="desktop-window-chrome__sidebar">
       <span class="desktop-window-chrome__brand">
         <img src="/movo-logo.png" alt="" />
@@ -158,7 +168,7 @@ const emit = defineEmits<{
   inset: 0 0 auto 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: var(--desktop-navigation-width, 260px) minmax(0, 1fr);
   height: 48px;
   color: #475569;
   -webkit-app-region: drag;
@@ -235,6 +245,10 @@ const emit = defineEmits<{
   object-fit: contain;
 }
 
+.desktop-window-chrome--compact-navigation .desktop-window-chrome__brand {
+  display: none;
+}
+
 .desktop-window-chrome__title {
   flex: 1;
   overflow: hidden;
@@ -308,10 +322,4 @@ const emit = defineEmits<{
 :global(html.theme-dark) .desktop-window-chrome__icon-button { color:#94a3b8; }
 :global(html.theme-dark) .desktop-window-chrome__icon-button:hover:not(:disabled) { background:#1e293b; color:#93c5fd; }
 
-@media (max-width: 1100px) {
-  .desktop-window-chrome {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
-  .desktop-window-chrome--collapsed { grid-template-columns:0 minmax(0,1fr); }
-}
 </style>

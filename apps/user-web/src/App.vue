@@ -7,6 +7,7 @@ import TokenUsagePage from './components/TokenUsagePage.vue'
 import ProfileModal from './components/ProfileModal.vue'
 import productUiExtension from '@movo-product-extension'
 import DesktopWindowChrome from './components/desktop/DesktopWindowChrome.vue'
+import DesktopPrimaryNavigation, { type DesktopPrimarySection } from './components/desktop/DesktopPrimaryNavigation.vue'
 import WindowsTitleBar from './components/desktop/WindowsTitleBar.vue'
 import ChatSessionHeader from './components/chat/ChatSessionHeader.vue'
 import DesktopServerSetup from './components/desktop/DesktopServerSetup.vue'
@@ -146,6 +147,19 @@ const editingSessionId = ref<string | null>(null)
 const editingSessionTitle = ref('')
 const renamingSessionId = ref<string | null>(null)
 const currentView = ref<'chat' | 'skills' | 'tools' | 'knowledge' | 'skill-config' | 'composite-editor' | 'token-usage' | 'scheduled-tasks'>('chat')
+const desktopPrimarySection = computed<DesktopPrimarySection>(() => {
+  if (currentView.value === 'scheduled-tasks') return 'scheduled'
+  if (currentView.value === 'skills' || currentView.value === 'skill-config' || currentView.value === 'composite-editor') return 'skills'
+  if (currentView.value === 'tools') return 'tools'
+  if (currentView.value === 'knowledge') return 'knowledge'
+  return 'home'
+})
+const desktopSecondaryNavigationVisible = computed(() =>
+  capabilities.isDesktop && desktopPrimarySection.value === 'home' && !windowsSidebarCollapsed.value,
+)
+const desktopNavigationWidth = computed(() => capabilities.isDesktop
+  ? 64 + (desktopSecondaryNavigationVisible.value ? 260 : 0)
+  : 260)
 const scheduledTaskInitialPrompt = ref('')
 const scheduledTaskInitialSessionId = ref<string | null>(null)
 const scheduledTaskCreateRequestKey = ref(0)
@@ -577,7 +591,7 @@ const sessionSearchDisplayItems = computed(() =>
 )
 const sidebarItems = computed(() => [
   { icon: 'plus', label: t('app.sidebar.new_chat') },
-  { icon: 'clock', label: locale.value === 'zh' ? '定时任务' : 'Scheduled tasks' },
+  ...(capabilities.isDesktop ? [] : [{ icon: 'clock', label: locale.value === 'zh' ? '定时任务' : 'Scheduled tasks' }]),
   { icon: 'search', label: t('app.sidebar.search_chats') },
 ])
 const publishChannelSuggestions = [
@@ -1044,6 +1058,14 @@ function openToolsPage() {
 function openKnowledgePage() {
   navigateTo('knowledge')
   void refreshPersonalKnowledgeCount()
+}
+
+function openDesktopPrimarySection(section: DesktopPrimarySection) {
+  if (section === 'home') navigateTo('chat')
+  else if (section === 'scheduled') openScheduledTasks()
+  else if (section === 'skills') openSkillsPage()
+  else if (section === 'tools') openToolsPage()
+  else openKnowledgePage()
 }
 
 function openSkillConfig(skill: any) {
@@ -2117,8 +2139,9 @@ onBeforeUnmount(() => {
     />
     <DesktopWindowChrome
       v-if="capabilities.isDesktop"
+      :navigation-width="desktopNavigationWidth"
       :windows-title-bar="isWindowsDesktop"
-      :sidebar-collapsed="windowsSidebarCollapsed"
+      :sidebar-collapsed="false"
       :title="desktopWindowTitle"
       :show-back="currentView === 'skills'"
       :back-label="t('skills.back_to_chat')"
@@ -2152,8 +2175,19 @@ onBeforeUnmount(() => {
       @toggle-code-panel="toggleDesktopCodePanel"
       @back="closeSkillsPage"
     />
+    <DesktopPrimaryNavigation
+      v-if="capabilities.isDesktop"
+      :active="desktopPrimarySection"
+      :locale="locale === 'en' ? 'en' : 'zh'"
+      :skills-available="canUseSkills"
+      :tools-available="canUseTools"
+      :knowledge-available="canUseKnowledge"
+      :skill-badge="pendingSkillShareCount"
+      :knowledge-badge="personalKnowledgeUnreadCount"
+      @navigate="openDesktopPrimarySection"
+    />
     <!-- SIDEBAR -->
-    <aside class="app-sidebar w-[260px] bg-[#f8fafc] flex flex-col border-r border-gray-200 shadow-[1px_0_0_rgba(0,0,0,0.02)]">
+    <aside v-show="!capabilities.isDesktop || desktopSecondaryNavigationVisible" class="app-sidebar w-[260px] bg-[#f8fafc] flex flex-col border-r border-gray-200 shadow-[1px_0_0_rgba(0,0,0,0.02)]">
       <div v-if="!capabilities.isDesktop" class="flex h-14 items-center gap-2.5 px-5" aria-label="MOVO">
         <img src="/movo-logo.png" alt="" class="h-8 w-10 object-contain" />
         <span class="text-[15px] font-extrabold tracking-[0.14em] text-slate-800">MOVO</span>
@@ -2367,8 +2401,8 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <div v-if="canUseSkills || canUseTools" class="mt-2 px-5 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">{{ t('app.sidebar.skills') }}</div>
-      <div v-if="canUseSkills || canUseTools" class="mb-2 space-y-0.5 px-3">
+      <div v-if="!capabilities.isDesktop && (canUseSkills || canUseTools)" class="mt-2 px-5 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">{{ t('app.sidebar.skills') }}</div>
+      <div v-if="!capabilities.isDesktop && (canUseSkills || canUseTools)" class="mb-2 space-y-0.5 px-3">
         <button
           v-if="canUseSkills"
           class="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left text-sm transition-all active:scale-95"
@@ -3201,9 +3235,17 @@ onBeforeUnmount(() => {
   padding-top: 48px;
 }
 
+.app-shell--desktop > .desktop-primary-nav {
+  padding-top: 58px;
+}
+
 .app-shell--windows-desktop > .app-sidebar,
 .app-shell--windows-desktop > .app-main {
   padding-top: 88px;
+}
+
+.app-shell--windows-desktop > .desktop-primary-nav {
+  padding-top: 98px;
 }
 
 .app-shell--windows-sidebar-collapsed > .app-sidebar {
@@ -3296,12 +3338,6 @@ onBeforeUnmount(() => {
 
   .personalization-content {
     padding: 14px;
-  }
-}
-
-@media (max-width: 1100px) {
-  .app-shell--desktop > .app-sidebar {
-    width: 220px;
   }
 }
 
