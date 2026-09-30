@@ -50,6 +50,33 @@ html.platform-desktop.theme-dark .tools-page .tools-header h1 {
   color: #f1f5f9 !important;
 }
 
+html.platform-desktop.theme-dark :is(.skills-page, .tools-page) .metric-icon {
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16) !important;
+}
+
+html.platform-desktop.theme-dark :is(.skills-page, .tools-page) .metric-icon-total {
+  color: #8bb8ff !important;
+  background: #1d3556 !important;
+}
+
+html.platform-desktop.theme-dark .skills-page .metric-icon-writing,
+html.platform-desktop.theme-dark .tools-page .metric-icon-enabled {
+  color: #79ddb5 !important;
+  background: #173c35 !important;
+}
+
+html.platform-desktop.theme-dark .skills-page .metric-icon-workflow,
+html.platform-desktop.theme-dark .tools-page .metric-icon-pass {
+  color: #f3bc66 !important;
+  background: #44331f !important;
+}
+
+html.platform-desktop.theme-dark .skills-page .metric-icon-config,
+html.platform-desktop.theme-dark .tools-page .metric-icon-mcp {
+  color: #b9a7ff !important;
+  background: #322951 !important;
+}
+
 html.platform-desktop.theme-dark .skills-page .metric-label,
 html.platform-desktop.theme-dark .skills-page .metric-note,
 html.platform-desktop.theme-dark .skills-page .card-desc,

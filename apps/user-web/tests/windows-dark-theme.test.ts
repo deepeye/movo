@@ -54,3 +54,12 @@ test('dark callout surfaces and their strong text colors are paired', () => {
     assert.ok(css.includes(`.${className}`), `${className} needs light ink`)
   }
 })
+
+test('resource metric icons use muted semantic surfaces in dark mode', () => {
+  const css = readFileSync(resolve(import.meta.dirname, '../src/styles/windows-dark/windows-resources-theme.css'), 'utf8')
+  for (const className of ['metric-icon-total', 'metric-icon-writing', 'metric-icon-workflow', 'metric-icon-config', 'metric-icon-enabled', 'metric-icon-mcp', 'metric-icon-pass']) {
+    assert.ok(css.includes(`.${className}`), `${className} needs a dark semantic surface`)
+  }
+  assert.match(css, /\.metric-icon-total[\s\S]*background: #1d3556/)
+  assert.match(css, /\.metric-icon-mcp[\s\S]*background: #322951/)
+})
