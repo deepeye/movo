@@ -17,6 +17,12 @@ RUN npm run build
 # avoids the Alpine musl pwritev2 path rejected by older container hosts.
 FROM nginx:1.31.6-trixie
 
+ARG MOVO_SECURITY_REFRESH=local
+RUN test -n "${MOVO_SECURITY_REFRESH}" \
+    && apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
