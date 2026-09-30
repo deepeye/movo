@@ -158,7 +158,7 @@ const desktopSecondaryNavigationVisible = computed(() =>
   capabilities.isDesktop && desktopPrimarySection.value === 'home' && !windowsSidebarCollapsed.value,
 )
 const desktopNavigationWidth = computed(() => capabilities.isDesktop
-  ? 64 + (desktopSecondaryNavigationVisible.value ? 260 : 0)
+  ? 52 + (desktopSecondaryNavigationVisible.value ? 260 : 0)
   : 260)
 const scheduledTaskInitialPrompt = ref('')
 const scheduledTaskInitialSessionId = ref<string | null>(null)

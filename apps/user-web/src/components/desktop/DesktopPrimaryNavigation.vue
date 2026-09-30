@@ -107,11 +107,11 @@ const items = computed<NavigationItem[]>(() => [
   --desktop-nav-tooltip-bg: #172033;
   --desktop-nav-tooltip-ink: #f8fafc;
   display: flex;
-  width: 64px;
+  width: 52px;
   min-height: 0;
   flex: none;
   flex-direction: column;
-  padding: 10px 7px 12px;
+  padding: 10px 5px 12px;
   border-right: 1px solid var(--desktop-nav-border);
   color: var(--desktop-nav-ink);
   background: var(--desktop-nav-bg);
@@ -126,13 +126,13 @@ const items = computed<NavigationItem[]>(() => [
 .desktop-primary-nav__item {
   position: relative;
   display: flex;
-  width: 50px;
-  min-height: 48px;
+  width: 42px;
+  min-height: 42px;
   align-items: center;
   justify-content: center;
   padding: 4px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   color: inherit;
   background: transparent;
   cursor: pointer;
@@ -157,14 +157,14 @@ const items = computed<NavigationItem[]>(() => [
 
 .desktop-primary-nav__icon {
   display: grid;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   place-items: center;
 }
 
 .desktop-primary-nav__icon svg {
-  width: 21px;
-  height: 21px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -220,8 +220,8 @@ const items = computed<NavigationItem[]>(() => [
 .desktop-primary-nav__account {
   position: relative;
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   flex: none;
   place-items: center;
   align-self: center;
@@ -229,7 +229,7 @@ const items = computed<NavigationItem[]>(() => [
   padding: 0;
   overflow: visible;
   border: 2px solid rgba(255, 255, 255, .78);
-  border-radius: 12px;
+  border-radius: 10px;
   color: #fff;
   background: linear-gradient(145deg, #3b82f6, #4f46e5);
   box-shadow: 0 2px 8px rgba(15, 23, 42, .16);
@@ -248,7 +248,7 @@ const items = computed<NavigationItem[]>(() => [
 .desktop-primary-nav__account img {
   width: 100%;
   height: 100%;
-  border-radius: 10px;
+  border-radius: 8px;
   object-fit: cover;
 }
 
@@ -284,7 +284,7 @@ const items = computed<NavigationItem[]>(() => [
   transform: translate(0, -50%);
 }
 
-:global(html.platform-desktop.theme-dark) .desktop-primary-nav {
+:global(html.platform-desktop.theme-dark .desktop-primary-nav) {
   --desktop-nav-bg: #24272c;
   --desktop-nav-border: #393d44;
   --desktop-nav-ink: #a6adb8;
@@ -297,7 +297,7 @@ const items = computed<NavigationItem[]>(() => [
   --desktop-nav-tooltip-ink: #0f172a;
 }
 
-:global(html.platform-desktop.theme-dark) .desktop-primary-nav__badge {
+:global(html.platform-desktop.theme-dark .desktop-primary-nav__badge) {
   border-color: #24272c;
 }
 
