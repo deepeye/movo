@@ -2184,7 +2184,13 @@ onBeforeUnmount(() => {
       :knowledge-available="canUseKnowledge"
       :skill-badge="pendingSkillShareCount"
       :knowledge-badge="personalKnowledgeUnreadCount"
+      :logged-in="isLoggedIn"
+      :avatar-url="displayAvatar()"
+      :avatar-text="displayAvatarText()"
+      :account-label="isLoggedIn ? displayName() : t('app.sidebar.login_register')"
       @navigate="openDesktopPrimarySection"
+      @account="toggleUserMenu"
+      @avatar-error="handleAvatarError"
     />
     <!-- SIDEBAR -->
     <aside v-show="!capabilities.isDesktop || desktopSecondaryNavigationVisible" class="app-sidebar w-[260px] bg-[#f8fafc] flex flex-col border-r border-gray-200 shadow-[1px_0_0_rgba(0,0,0,0.02)]">
@@ -2450,9 +2456,9 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- User Profile (Bottom) -->
-      <div class="p-4 border-t border-gray-200 bg-white/50" data-user-menu>
+      <div :class="capabilities.isDesktop ? 'desktop-account-menu-host' : 'p-4 border-t border-gray-200 bg-white/50'" data-user-menu>
         <div
-          v-if="isLoggedIn"
+          v-if="!capabilities.isDesktop && isLoggedIn"
           class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200/70 cursor-pointer transition-colors"
           @click.stop="toggleUserMenu"
         >
@@ -2468,7 +2474,7 @@ onBeforeUnmount(() => {
           </div>
           <svg class="w-3 h-3 text-gray-400 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
         </div>
-        <div v-else class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200/70 cursor-pointer transition-colors" @click="openLogin">
+        <div v-else-if="!capabilities.isDesktop" class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200/70 cursor-pointer transition-colors" @click="openLogin">
           <div class="w-9 h-9 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400 font-bold border border-gray-300 border-dashed">
             ?
           </div>
@@ -2476,10 +2482,13 @@ onBeforeUnmount(() => {
         </div>
         
         <!-- User Menu Popup -->
-        <div
-          v-if="userMenuOpen && isLoggedIn"
-          class="fixed bottom-20 left-4 z-[80] w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white shadow-[0_18px_56px_rgba(15,23,42,0.14)] p-3 text-sm text-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-200"
-        >
+        <Teleport to="body">
+          <div
+            v-if="userMenuOpen && isLoggedIn"
+            class="fixed bottom-20 z-[80] w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white p-3 text-sm text-gray-700 shadow-[0_18px_56px_rgba(15,23,42,0.14)] animate-in fade-in slide-in-from-bottom-2 duration-200"
+            :class="capabilities.isDesktop ? 'left-[72px]' : 'left-4'"
+            data-user-menu
+          >
           <div class="flex items-center gap-3 px-2 pb-3 pt-1">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-blue-600 font-bold text-white">
               <img v-if="displayAvatar()" :src="displayAvatar()" alt="" class="h-full w-full object-cover" @error="handleAvatarError" />
@@ -2628,7 +2637,8 @@ onBeforeUnmount(() => {
           <button class="w-full rounded-xl px-3 py-2.5 text-left font-medium text-red-600 transition-colors hover:bg-red-50" @click="logout">
             {{ t('app.account.logout') }}
           </button>
-        </div>
+          </div>
+        </Teleport>
       </div>
     </aside>
 

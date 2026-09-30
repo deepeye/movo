@@ -19,6 +19,10 @@ const props = withDefaults(defineProps<{
   knowledgeAvailable?: boolean
   skillBadge?: number
   knowledgeBadge?: number
+  loggedIn?: boolean
+  avatarUrl?: string
+  avatarText?: string
+  accountLabel?: string
 }>(), {
   locale: 'zh',
   skillsAvailable: true,
@@ -26,9 +30,17 @@ const props = withDefaults(defineProps<{
   knowledgeAvailable: true,
   skillBadge: 0,
   knowledgeBadge: 0,
+  loggedIn: false,
+  avatarUrl: '',
+  avatarText: '?',
+  accountLabel: '',
 })
 
-const emit = defineEmits<{ (event: 'navigate', section: DesktopPrimarySection): void }>()
+const emit = defineEmits<{
+  (event: 'navigate', section: DesktopPrimarySection): void
+  (event: 'account'): void
+  (event: 'avatar-error', value: Event): void
+}>()
 
 const items = computed<NavigationItem[]>(() => [
   { id: 'home', zh: '首页', en: 'Home', visible: true, badge: 0 },
@@ -63,16 +75,32 @@ const items = computed<NavigationItem[]>(() => [
         <span v-if="item.badge > 0" class="desktop-primary-nav__badge" aria-hidden="true">{{ item.badge > 99 ? '99+' : item.badge }}</span>
       </button>
     </div>
+    <button
+      type="button"
+      class="desktop-primary-nav__account"
+      :aria-label="accountLabel"
+      :data-tooltip="accountLabel"
+      data-user-menu
+      @click.stop="emit('account')"
+    >
+      <img
+        v-if="loggedIn && avatarUrl"
+        :src="avatarUrl"
+        alt=""
+        @error="emit('avatar-error', $event)"
+      />
+      <span v-else>{{ loggedIn ? avatarText : '?' }}</span>
+    </button>
   </nav>
 </template>
 
 <style scoped>
 .desktop-primary-nav {
-  --desktop-nav-bg: #f3f6fa;
-  --desktop-nav-border: #e2e8f0;
-  --desktop-nav-ink: #64748b;
-  --desktop-nav-hover-bg: #e6edf7;
-  --desktop-nav-hover-ink: #245da8;
+  --desktop-nav-bg: #e5eaf1;
+  --desktop-nav-border: #d3dae5;
+  --desktop-nav-ink: #475569;
+  --desktop-nav-hover-bg: #d7dee9;
+  --desktop-nav-hover-ink: #174f96;
   --desktop-nav-active-bg: #fff;
   --desktop-nav-active-ink: #1d5fbd;
   --desktop-nav-active-border: #dce5f2;
@@ -189,25 +217,93 @@ const items = computed<NavigationItem[]>(() => [
   line-height: 11px;
 }
 
+.desktop-primary-nav__account {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  align-self: center;
+  margin-top: auto;
+  padding: 0;
+  overflow: visible;
+  border: 2px solid rgba(255, 255, 255, .78);
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(145deg, #3b82f6, #4f46e5);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .16);
+  cursor: pointer;
+}
+
+.desktop-primary-nav__account:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .24);
+}
+
+.desktop-primary-nav__account:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.desktop-primary-nav__account img {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.desktop-primary-nav__account span {
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.desktop-primary-nav__account::after {
+  position: absolute;
+  z-index: 60;
+  top: 50%;
+  left: calc(100% + 10px);
+  padding: 6px 9px;
+  border-radius: 7px;
+  color: var(--desktop-nav-tooltip-ink);
+  background: var(--desktop-nav-tooltip-bg);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .18);
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(2px, -50%);
+  transition: opacity 140ms ease, transform 140ms ease;
+  white-space: nowrap;
+}
+
+.desktop-primary-nav__account:hover::after,
+.desktop-primary-nav__account:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
 :global(html.platform-desktop.theme-dark) .desktop-primary-nav {
-  --desktop-nav-bg: #0b1422;
-  --desktop-nav-border: #28374d;
-  --desktop-nav-ink: #91a3ba;
-  --desktop-nav-hover-bg: #17263b;
-  --desktop-nav-hover-ink: #b9d6ff;
-  --desktop-nav-active-bg: #1b2b42;
-  --desktop-nav-active-ink: #b9d6ff;
-  --desktop-nav-active-border: #3a5575;
+  --desktop-nav-bg: #24272c;
+  --desktop-nav-border: #393d44;
+  --desktop-nav-ink: #a6adb8;
+  --desktop-nav-hover-bg: #34383f;
+  --desktop-nav-hover-ink: #f1f5f9;
+  --desktop-nav-active-bg: #3b3f46;
+  --desktop-nav-active-ink: #fff;
+  --desktop-nav-active-border: #50555e;
   --desktop-nav-tooltip-bg: #e2e8f0;
   --desktop-nav-tooltip-ink: #0f172a;
 }
 
 :global(html.platform-desktop.theme-dark) .desktop-primary-nav__badge {
-  border-color: #0b1422;
+  border-color: #24272c;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .desktop-primary-nav__item,
-  .desktop-primary-nav__item::after { transition: none; }
+  .desktop-primary-nav__item::after,
+  .desktop-primary-nav__account::after { transition: none; }
 }
 </style>
