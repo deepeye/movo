@@ -64,7 +64,7 @@ const emit = defineEmits<{
   >
     <div class="desktop-window-chrome__sidebar">
       <span class="desktop-window-chrome__brand">
-        <img src="/movo-logo.png" alt="" />
+        <img src="/movo-logo.png" :alt="windowsTitleBar && (navigationWidth || 260) <= 64 ? 'MOVO' : ''" />
         <span>MOVO</span>
       </span>
     </div>
@@ -246,6 +246,19 @@ const emit = defineEmits<{
 }
 
 .desktop-window-chrome--compact-navigation .desktop-window-chrome__brand {
+  display: none;
+}
+
+.desktop-window-chrome--windows.desktop-window-chrome--compact-navigation .desktop-window-chrome__sidebar {
+  justify-content: center;
+  padding: 0;
+}
+
+.desktop-window-chrome--windows.desktop-window-chrome--compact-navigation .desktop-window-chrome__brand {
+  display: inline-flex;
+}
+
+.desktop-window-chrome--windows.desktop-window-chrome--compact-navigation .desktop-window-chrome__brand span {
   display: none;
 }
 
