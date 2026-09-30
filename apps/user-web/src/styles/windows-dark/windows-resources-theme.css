@@ -70,6 +70,64 @@ html.platform-desktop.theme-dark .tools-page .empty-shell {
   border-color: #334155 !important;
 }
 
+html.platform-desktop.theme-dark .skills-page :is(.view-tabs, .list-filter-row),
+html.platform-desktop.theme-dark .tools-page .list-filter-row {
+  border-color: #2c3b4f !important;
+}
+
+html.platform-desktop.theme-dark .skills-page .view-tabs button {
+  color: #9eacc0 !important;
+}
+
+html.platform-desktop.theme-dark .skills-page .view-tabs button:hover {
+  color: #e5edf8 !important;
+  background: #233149 !important;
+}
+
+html.platform-desktop.theme-dark .skills-page .view-tabs button.active {
+  color: #eaf2ff !important;
+  background: #294a78 !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page {
+  color: #e2e8f0 !important;
+  background: #0f172a !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page :is(.tasks-header, .shell-card, .task-card) {
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+  background: #182131 !important;
+  box-shadow: none !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page .list-filter-row {
+  border-color: #2c3b4f !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page :is(.tasks-header h1, .card-title, .empty-title) {
+  color: #f1f5f9 !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page :is(.card-desc, .card-time, .card-meta, .meta-item, .empty-desc) {
+  color: #a8b7ca !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page .empty-shell {
+  border-color: #334155 !important;
+  background: #111827 !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page .empty-visual span {
+  color: #bfdbfe !important;
+  background: #223b5c !important;
+}
+
+html.platform-desktop.theme-dark .tasks-page .card-switch {
+  border-color: #435d7f !important;
+  background: #223750 !important;
+}
+
 html.platform-desktop.theme-dark .skills-page :is(.card-switch, .feedback-btn-unread),
 html.platform-desktop.theme-dark .tools-page :is(.test-summary, .result-panel, .schema-grid, .schema-head) {
   background: #223750 !important;

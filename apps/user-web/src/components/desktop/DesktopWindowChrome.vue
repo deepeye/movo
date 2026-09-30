@@ -249,6 +249,10 @@ const emit = defineEmits<{
   display: none;
 }
 
+.desktop-window-chrome--compact-navigation:not(.desktop-window-chrome--windows) .desktop-window-chrome__content {
+  padding-left: 52px;
+}
+
 .desktop-window-chrome__title {
   flex: 1;
   overflow: hidden;
@@ -295,31 +299,31 @@ const emit = defineEmits<{
 .desktop-window-chrome__icon-button svg { width:18px; height:18px; }
 .desktop-window-chrome__badge { position:absolute; top:1px; right:1px; min-width:14px; height:14px; border:1px solid #fff; border-radius:7px; background:#2563eb; padding:0 3px; color:#fff; font-size:8px; line-height:12px; }
 
-:global(html.theme-dark) .desktop-window-chrome__sidebar {
+:global(html.theme-dark .desktop-window-chrome__sidebar) {
   border-color: #334155;
   background: #0b1220;
 }
 
-:global(html.theme-dark) .desktop-window-chrome__content {
+:global(html.theme-dark .desktop-window-chrome__content) {
   border-color: #334155;
   background: rgba(17, 24, 39, 0.96);
 }
 
-:global(html.theme-dark) .desktop-window-chrome__brand,
-:global(html.theme-dark) .desktop-window-chrome__title {
+:global(html.theme-dark .desktop-window-chrome__brand),
+:global(html.theme-dark .desktop-window-chrome__title) {
   color: #e2e8f0;
 }
 
-:global(html.theme-dark) .desktop-window-chrome__back-button {
+:global(html.theme-dark .desktop-window-chrome__back-button) {
   color: #cbd5e1;
 }
 
-:global(html.theme-dark) .desktop-window-chrome__back-button:hover {
+:global(html.theme-dark .desktop-window-chrome__back-button:hover) {
   background: #1e293b;
   color: #93c5fd;
 }
 
-:global(html.theme-dark) .desktop-window-chrome__icon-button { color:#94a3b8; }
-:global(html.theme-dark) .desktop-window-chrome__icon-button:hover:not(:disabled) { background:#1e293b; color:#93c5fd; }
+:global(html.theme-dark .desktop-window-chrome__icon-button) { color:#94a3b8; }
+:global(html.theme-dark .desktop-window-chrome__icon-button:hover:not(:disabled)) { background:#1e293b; color:#93c5fd; }
 
 </style>
