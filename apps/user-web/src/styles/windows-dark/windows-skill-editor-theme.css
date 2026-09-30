@@ -1,43 +1,43 @@
 /* Windows-only dark user-web styles. */
 /* Workflow and writing-style editors use fixed light surfaces upstream. */
-html.platform-windows.theme-dark .app-shell .skill-config-page {
+html.platform-desktop.theme-dark .app-shell .skill-config-page {
   color: #e9f1fd !important;
   background: #111b2b !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.workflow-toolbar, .style-toolbar, .shell-panel, .shell-card) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.workflow-toolbar, .style-toolbar, .shell-panel, .shell-card) {
   color: #e9f1fd !important;
   background: #19263a !important;
   border-color: #364960 !important;
   box-shadow: 0 8px 28px rgba(0, 0, 0, .14) !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.toolbar-title, .page-title, .config-title, .content-title, .add-title, .section-title, .field-label, .preview-value, .preview-section-row, .test-head, .result-title) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.toolbar-title, .page-title, .config-title, .content-title, .add-title, .section-title, .field-label, .preview-value, .preview-section-row, .test-head, .result-title) {
   color: #f1f6ff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.page-subtitle, .config-note, .preview-label, .preview-empty, .flow-empty, .empty-result, .quick-node-help p, .result-meta) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.page-subtitle, .config-note, .preview-label, .preview-empty, .flow-empty, .empty-result, .quick-node-help p, .result-meta) {
   color: #b2c4da !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.step-card, .add-step-box, .section-node-card, .section-empty, .flow-node, .quick-node-help, .result-card, .empty-result) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.step-card, .add-step-box, .section-node-card, .section-empty, .flow-node, .quick-node-help, .result-card, .empty-result) {
   color: #e3edfa !important;
   background: #1e2d43 !important;
   border-color: #405675 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.step-card.active, .quick-node-button:hover) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.step-card.active, .quick-node-button:hover) {
   background: #243d5f !important;
   border-color: #6099eb !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.preview-section-row, .preview-section-row.child, .preview-chip, .quick-node-button) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.preview-section-row, .preview-section-row.child, .preview-chip, .quick-node-button) {
   color: #c7ddff !important;
   background: #243a59 !important;
   border-color: #49678d !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input, .n-base-selection) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-input, .n-base-selection) {
   --n-color: #142238 !important;
   --n-color-active: #142238 !important;
   --n-text-color: #edf4ff !important;
@@ -47,7 +47,7 @@ html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input, .n-
   --n-border-focus: 1px solid #6b9ee2 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-button--default-type, .n-button--secondary-type) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-button--default-type, .n-button--secondary-type) {
   --n-color: #263a58 !important;
   --n-color-hover: #315078 !important;
   --n-color-pressed: #20334f !important;
@@ -59,16 +59,16 @@ html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-button--de
   --n-text-color-pressed: #ffffff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-tag, .n-tag__content) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-tag, .n-tag__content) {
   color: #c9ddfa !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input__input-el, .n-input__textarea-el, .n-base-selection-label) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-input__input-el, .n-input__textarea-el, .n-base-selection-label) {
   color: #edf4ff !important;
 }
 
 /* Naive UI teleports the node-help popover outside .skill-config-page. */
-html.platform-windows.theme-dark .n-popover:has(.quick-node-help) {
+html.platform-desktop.theme-dark .n-popover:has(.quick-node-help) {
   --n-color: #1e2d43 !important;
   --n-text-color: #e3edfa !important;
   background: #1e2d43 !important;
@@ -76,12 +76,12 @@ html.platform-windows.theme-dark .n-popover:has(.quick-node-help) {
   box-shadow: 0 14px 36px rgba(2, 8, 20, .48) !important;
 }
 
-html.platform-windows.theme-dark .n-popover:has(.quick-node-help) .n-popover-arrow {
+html.platform-desktop.theme-dark .n-popover:has(.quick-node-help) .n-popover-arrow {
   background: #1e2d43 !important;
   border-color: #49617f !important;
 }
 
-html.platform-windows.theme-dark .n-popover .quick-node-help { color: #d6e3f4 !important; }
-html.platform-windows.theme-dark .n-popover .quick-node-help strong { color: #f2f7ff !important; }
-html.platform-windows.theme-dark .n-popover .quick-node-help > div { border-color: #425a79 !important; }
-html.platform-windows.theme-dark .n-popover .quick-node-help > div span { color: #96c4ff !important; }
+html.platform-desktop.theme-dark .n-popover .quick-node-help { color: #d6e3f4 !important; }
+html.platform-desktop.theme-dark .n-popover .quick-node-help strong { color: #f2f7ff !important; }
+html.platform-desktop.theme-dark .n-popover .quick-node-help > div { border-color: #425a79 !important; }
+html.platform-desktop.theme-dark .n-popover .quick-node-help > div span { color: #96c4ff !important; }

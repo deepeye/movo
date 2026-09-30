@@ -1,103 +1,103 @@
 /* Windows-only dark user-web styles. */
 /* KnowledgeSourceViewer is teleported to body. Scope to its two-pane shape;
    keep document pages light, while the surrounding desktop chrome is dark. */
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50:has(> section > .grid > main + aside) {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50:has(> section > .grid > main + aside) {
   background: rgba(4, 11, 23, .78) !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) {
   background: #121e30 !important;
   border: 1px solid #405777 !important;
   box-shadow: 0 28px 80px rgba(0, 0, 0, .52) !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) > header {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) > header {
   background: #192b43 !important;
   border-color: #405777 !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) > .grid {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) > .grid {
   background: #111d2e !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main {
   border-color: #405777 !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main > div {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main > div {
   background: #1c2c42 !important;
   border-color: #405777 !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main > div > .relative {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main > div > .relative {
   background: #25364e !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .native-preview {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .native-preview {
   background: #f8fafc !important;
   color: #172238 !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .native-preview table {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .native-preview table {
   background: #fff !important;
   color: #172238 !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main .absolute.rounded-full {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) main .absolute.rounded-full {
   background: #284365 !important;
   color: #d5e6fc !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside {
   background: #17263b !important;
   color: #e6effc !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .text-slate-950,
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .text-slate-900 {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .text-slate-950,
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .text-slate-900 {
   color: #edf4ff !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .text-slate-500 {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) .text-slate-500 {
   color: #b0c3dc !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button {
   background: #1d3049 !important;
   border-color: #415b7b !important;
   color: #e7f0fc !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button:hover,
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button:focus-visible {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button:hover,
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button:focus-visible {
   background: #29476c !important;
   border-color: #79abec !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button.bg-blue-50 {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > .space-y-2 > button.bg-blue-50 {
   background: #28517e !important;
   border-color: #83b8ff !important;
   box-shadow: inset 3px 0 0 #83b8ff !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside .bg-slate-100 {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside .bg-slate-100 {
   background: #314862 !important;
   color: #d5e5fa !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > section {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > section {
   background: #223d5e !important;
   border-color: #4e79ac !important;
 }
 
-html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > section pre {
+html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) aside > section pre {
   background: #13253b !important;
   color: #e0ecfb !important;
   border: 1px solid #405b7d !important;
 }
 
 @media (max-width: 1050px) {
-  html.platform-windows.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) > .grid {
+  html.platform-desktop.theme-dark body > .fixed.inset-0.z-50 > section:has(> .grid > main + aside) > .grid {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 35%) !important;
   }
 }

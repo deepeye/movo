@@ -1,84 +1,84 @@
 /* Windows-only dark user-web styles. */
 /* Workflow node configuration and its document picker use fixed light colors. */
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.review-config, .material-config, .script-plugin-panel, .node-usage-content, .script-drawer-details, .script-check-result, .result-block, .section-node-card-child) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.review-config, .material-config, .script-plugin-panel, .node-usage-content, .script-drawer-details, .script-check-result, .result-block, .section-node-card-child) {
   background: #1d2e45 !important;
   border-color: #405978 !important;
   color: #e4eefc !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.review-panel, .delivery-field, .source-choice, .source-detail, .picker-trigger, .document-row, .step-card.active, .add-step-box, .meta-item) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.review-panel, .delivery-field, .source-choice, .source-detail, .picker-trigger, .document-row, .step-card.active, .add-step-box, .meta-item) {
   background: #20334d !important;
   border-color: #466080 !important;
   color: #e4eefc !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.source-choice.selected, .document-row.selected, .delivery-options button.active, .mode-switch button.active) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.source-choice.selected, .document-row.selected, .delivery-options button.active, .mode-switch button.active) {
   background: #2a4c75 !important;
   border-color: #82b4f6 !important;
   color: #f4f8ff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.config-heading strong, .panel-heading strong, .delivery-heading strong, .delivery-options strong, .result-copy strong, .choice-copy strong, .field-heading strong, .trigger-copy strong, .document-copy strong, .script-processing-instruction strong, .script-plugin-rules strong, .script-contract-grid b, .script-drawer-instruction strong, .node-description-label, .node-usage-content > strong, .quick-node-help strong, .result-card-head, .meta-value, .panel-title) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.config-heading strong, .panel-heading strong, .delivery-heading strong, .delivery-options strong, .result-copy strong, .choice-copy strong, .field-heading strong, .trigger-copy strong, .document-copy strong, .script-processing-instruction strong, .script-plugin-rules strong, .script-contract-grid b, .script-drawer-instruction strong, .node-description-label, .node-usage-content > strong, .quick-node-help strong, .result-card-head, .meta-value, .panel-title) {
   color: #edf4ff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.config-heading p, .panel-heading small, .delivery-heading small, .delivery-options small, .result-copy small, .choice-copy small, .field-heading span, .field-hint, .trigger-copy small, .document-copy small, .script-plugin-rules, .node-usage-guide, .node-optional-requirement summary, .node-optional-requirement summary span, .result-card p, .coverage-row, .suggestion-list, .meta-label, .panel-desc) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.config-heading p, .panel-heading small, .delivery-heading small, .delivery-options small, .result-copy small, .choice-copy small, .field-heading span, .field-hint, .trigger-copy small, .document-copy small, .script-plugin-rules, .node-usage-guide, .node-optional-requirement summary, .node-optional-requirement summary span, .result-card p, .coverage-row, .suggestion-list, .meta-label, .panel-desc) {
   color: #b4c7df !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.mode-switch, .picker-tabs, .node-type-pill, .step-index, .script-instruction-example, .script-check-llm, .preview-chip) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.mode-switch, .picker-tabs, .node-type-pill, .step-index, .script-instruction-example, .script-check-llm, .preview-chip) {
   background: #29415f !important;
   color: #c7dfff !important;
   border-color: #50749f !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.mode-switch button, .picker-tabs button, .delivery-options button, .icon-button) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.mode-switch button, .picker-tabs button, .delivery-options button, .icon-button) {
   color: #d5e5f8 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.document-row:hover, .picker-trigger:hover, .source-choice:hover) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.document-row:hover, .picker-trigger:hover, .source-choice:hover) {
   background: #2c4a6d !important;
   border-color: #78a8e8 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.script-check-status.ok, .script-check-summary.pass, .final-conclusion.pass) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.script-check-status.ok, .script-check-summary.pass, .final-conclusion.pass) {
   background: #153e37 !important;
   color: #a4ead0 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.script-check-status.error, .script-check-summary.fail, .script-check-issue.error) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.script-check-status.error, .script-check-summary.fail, .script-check-issue.error) {
   background: #4a2a34 !important;
   color: #ffc1c6 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.script-generation-status, .script-check-issue.warning, .final-conclusion.warn) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.script-generation-status, .script-check-issue.warning, .final-conclusion.warn) {
   background: #493923 !important;
   color: #ffdda5 !important;
 }
 
-html.platform-windows.theme-dark .picker-modal :is(.picker-tabs, .result-list, .picker-footer) {
+html.platform-desktop.theme-dark .picker-modal :is(.picker-tabs, .result-list, .picker-footer) {
   background: #1c2d44 !important;
   border-color: #405978 !important;
 }
 
-html.platform-windows.theme-dark .picker-modal :is(.document-row, .picker-trigger) {
+html.platform-desktop.theme-dark .picker-modal :is(.document-row, .picker-trigger) {
   background: #223650 !important;
   color: #e5eefb !important;
   border-color: #466080 !important;
 }
 
-html.platform-windows.theme-dark .picker-modal :is(.document-copy strong, .result-heading strong, .footer-selection strong) {
+html.platform-desktop.theme-dark .picker-modal :is(.document-copy strong, .result-heading strong, .footer-selection strong) {
   color: #edf4ff !important;
 }
 
-html.platform-windows.theme-dark .picker-modal :is(.document-copy small, .result-heading span, .empty-state, .footer-selection) {
+html.platform-desktop.theme-dark .picker-modal :is(.document-copy small, .result-heading span, .empty-state, .footer-selection) {
   color: #b4c7df !important;
 }
 
 /* The workflow editor hard-codes white on Naive input wrappers and selects.
    Cover shared controls once, including every node type and optional fields. */
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input, .n-base-selection),
-html.platform-windows.theme-dark .picker-modal :is(.n-input, .n-base-selection) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-input, .n-base-selection),
+html.platform-desktop.theme-dark .picker-modal :is(.n-input, .n-base-selection) {
   --n-color: #17283e !important;
   --n-color-active: #1b304b !important;
   --n-text-color: #eaf2ff !important;
@@ -93,47 +93,47 @@ html.platform-windows.theme-dark .picker-modal :is(.n-input, .n-base-selection) 
   color: #eaf2ff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label),
-html.platform-windows.theme-dark .picker-modal :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label),
+html.platform-desktop.theme-dark .picker-modal :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label) {
   background: #17283e !important;
   color: #eaf2ff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input__input-el, .n-input__textarea-el)::placeholder,
-html.platform-windows.theme-dark .picker-modal :is(.n-input__input-el, .n-input__textarea-el)::placeholder {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-input__input-el, .n-input__textarea-el)::placeholder,
+html.platform-desktop.theme-dark .picker-modal :is(.n-input__input-el, .n-input__textarea-el)::placeholder {
   color: #a9bdd6 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input:focus-within, .n-base-selection:focus-within),
-html.platform-windows.theme-dark .picker-modal :is(.n-input:focus-within, .n-base-selection:focus-within) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-input:focus-within, .n-base-selection:focus-within),
+html.platform-desktop.theme-dark .picker-modal :is(.n-input:focus-within, .n-base-selection:focus-within) {
   background: #1b304b !important;
   border-radius: 8px;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page :is(.n-input:focus-within, .n-base-selection:focus-within) :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label),
-html.platform-windows.theme-dark .picker-modal :is(.n-input:focus-within, .n-base-selection:focus-within) :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label) {
+html.platform-desktop.theme-dark .app-shell .skill-config-page :is(.n-input:focus-within, .n-base-selection:focus-within) :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label),
+html.platform-desktop.theme-dark .picker-modal :is(.n-input:focus-within, .n-base-selection:focus-within) :is(.n-input-wrapper, .n-input__textarea, .n-input__textarea-el, .n-input__input-el, .n-base-selection-label) {
   background: #1b304b !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page .node-type-select .n-base-selection {
+html.platform-desktop.theme-dark .app-shell .skill-config-page .node-type-select .n-base-selection {
   background: #20334d !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page .node-resource-types-select .n-tag {
+html.platform-desktop.theme-dark .app-shell .skill-config-page .node-resource-types-select .n-tag {
   background: #294364 !important;
   border-color: #54749c !important;
   color: #e4efff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page .node-resource-types-select .n-tag__close {
+html.platform-desktop.theme-dark .app-shell .skill-config-page .node-resource-types-select .n-tag__close {
   color: #bfdaff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page .node-resource-types-select .n-tag__close:hover {
+html.platform-desktop.theme-dark .app-shell .skill-config-page .node-resource-types-select .n-tag__close:hover {
   background: #3b5e89 !important;
   color: #fff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .skill-config-page .browser-node-config .field-label {
+html.platform-desktop.theme-dark .app-shell .skill-config-page .browser-node-config .field-label {
   color: #d5e4f7 !important;
 }

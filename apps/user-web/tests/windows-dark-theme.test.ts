@@ -14,7 +14,7 @@ test('Windows detection works in browsers and Electron without marking Mac', () 
   assert.equal(isWindowsPlatform({ platform: 'Linux x86_64', userAgent: '' }), false)
 })
 
-test('every shared Windows selector is platform- and theme-gated', () => {
+test('dark selectors cover every desktop while light presentation stays Windows-only', () => {
   const directory = resolve(import.meta.dirname, '../src/styles/windows-dark')
   const files = readdirSync(directory).filter(name => name !== 'index.css' && name.endsWith('.css'))
   const indexCss = readFileSync(resolve(directory, 'index.css'), 'utf8')
@@ -25,13 +25,17 @@ test('every shared Windows selector is platform- and theme-gated', () => {
     root.walkRules(rule => {
       if (rule.parent?.type === 'atrule' && /keyframes$/i.test(rule.parent.name)) return
       for (const selector of rule.selectors) {
-        assert.match(selector, /^html\.platform-windows(?:\.theme-dark|:not\(\.theme-dark\))(?:\b|[\s.#:[>+~])/, `${file}: ${selector}`)
+        if (selector.includes(':not(.theme-dark)')) {
+          assert.match(selector, /^html\.platform-windows:not\(\.theme-dark\)(?:\b|[\s.#:[>+~])/, `${file}: ${selector}`)
+        } else {
+          assert.match(selector, /^html\.platform-desktop\.theme-dark(?:\b|[\s.#:[>+~])/, `${file}: ${selector}`)
+        }
       }
     })
   }
 })
 
-test('filled blue actions use white ink only on Windows dark', () => {
+test('filled blue actions use white ink on every desktop dark renderer', () => {
   assert.equal(themeOverridesForPlatform(false), naiveThemeOverrides)
   const overrides = themeOverridesForPlatform(true)
   assert.equal(overrides.Button.textColorPrimary, '#ffffff')

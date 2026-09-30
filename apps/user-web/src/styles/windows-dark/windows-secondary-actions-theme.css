@@ -1,7 +1,7 @@
 /* Naive's secondary primary buttons use product blue as their text color.
    On dark blue cards that blue is too dim; keep the translucent fill. */
-html.platform-windows.theme-dark .n-button--primary-type.n-button--secondary,
-html.platform-windows.theme-dark .n-button--info-type.n-button--secondary {
+html.platform-desktop.theme-dark .n-button--primary-type.n-button--secondary,
+html.platform-desktop.theme-dark .n-button--info-type.n-button--secondary {
   --n-text-color: #bdd5ff !important;
   --n-text-color-hover: #e0ecff !important;
   --n-text-color-pressed: #bdd5ff !important;

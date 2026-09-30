@@ -1,51 +1,51 @@
 /* Windows-only dark user-web styles. */
 /* Execution v3 has light-theme text colors in its scoped component styles.
    Keep this override within the Windows desktop dark theme. */
-html.platform-windows.theme-dark .app-shell .execution-v3 .execution-v3-toggle,
-html.platform-windows.theme-dark .app-shell .execution-v3 .execution-v3-elapsed {
+html.platform-desktop.theme-dark .app-shell .execution-v3 .execution-v3-toggle,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .execution-v3-elapsed {
   color: #a9bfdb !important;
 }
 
-html.platform-windows.theme-dark .app-shell .execution-v3 .commentary-copy,
-html.platform-windows.theme-dark .app-shell .execution-v3 .provisional-assistant-copy {
+html.platform-desktop.theme-dark .app-shell .execution-v3 .commentary-copy,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .provisional-assistant-copy {
   color: #e4edfa !important;
 }
 
-html.platform-windows.theme-dark .app-shell .execution-v3 .activity-row:not(.status-failed):not(.category-warning):not(.category-error),
-html.platform-windows.theme-dark .app-shell .execution-v3 .repeated-tool-group,
-html.platform-windows.theme-dark .app-shell .execution-v3 .repeated-tool-group ol {
+html.platform-desktop.theme-dark .app-shell .execution-v3 .activity-row:not(.status-failed):not(.category-warning):not(.category-error),
+html.platform-desktop.theme-dark .app-shell .execution-v3 .repeated-tool-group,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .repeated-tool-group ol {
   --activity-color: #b6c8df;
   color: #b6c8df !important;
 }
 
-html.platform-windows.theme-dark .app-shell .execution-v3 .activity-row.status-failed,
-html.platform-windows.theme-dark .app-shell .execution-v3 .activity-row.category-warning,
-html.platform-windows.theme-dark .app-shell .execution-v3 .activity-row.category-error,
-html.platform-windows.theme-dark .app-shell .execution-v3 .repeated-tool-group summary.failed {
+html.platform-desktop.theme-dark .app-shell .execution-v3 .activity-row.status-failed,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .activity-row.category-warning,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .activity-row.category-error,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .repeated-tool-group summary.failed {
   --activity-color: #f5b66b;
   color: #f5b66b !important;
 }
 
-html.platform-windows.theme-dark .app-shell .execution-v3 .activity-detail,
-html.platform-windows.theme-dark .app-shell .execution-v3 .tool-call-summary {
+html.platform-desktop.theme-dark .app-shell .execution-v3 .activity-detail,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .tool-call-summary {
   color: #9fb5d2 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .execution-v3 .tool-call-name {
+html.platform-desktop.theme-dark .app-shell .execution-v3 .tool-call-name {
   color: #d7e5f8 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .execution-v3 .actively-running .activity-copy,
-html.platform-windows.theme-dark .app-shell .execution-v3 summary.running .repeated-tool-label,
-html.platform-windows.theme-dark .app-shell .execution-v3 .execution-v3-thinking {
+html.platform-desktop.theme-dark .app-shell .execution-v3 .actively-running .activity-copy,
+html.platform-desktop.theme-dark .app-shell .execution-v3 summary.running .repeated-tool-label,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .execution-v3-thinking {
   color: #a8cbff !important;
   background-image: linear-gradient(100deg, #8bb9fa 15%, #edf5ff 48%, #8bb9fa 85%) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.platform-windows.theme-dark .app-shell .execution-v3 .actively-running .activity-copy,
-html.platform-windows.theme-dark .app-shell .execution-v3 summary.running .repeated-tool-label,
-html.platform-windows.theme-dark .app-shell .execution-v3 .execution-v3-thinking {
+  html.platform-desktop.theme-dark .app-shell .execution-v3 .actively-running .activity-copy,
+html.platform-desktop.theme-dark .app-shell .execution-v3 summary.running .repeated-tool-label,
+html.platform-desktop.theme-dark .app-shell .execution-v3 .execution-v3-thinking {
     background: none !important;
     color: #a8cbff !important;
   }

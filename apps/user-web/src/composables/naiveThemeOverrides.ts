@@ -33,10 +33,11 @@ export const naiveThemeOverrides = {
   },
 }
 
-/** Naive's dark theme uses dark ink on filled primary buttons. The product
- * blue needs white ink; text, ghost and secondary buttons keep their own tokens. */
-export function themeOverridesForPlatform(windowsDark: boolean) {
-  if (!windowsDark) return naiveThemeOverrides
+/** Naive's dark theme uses dark ink on filled primary buttons. Every desktop
+ * renderer uses the same product blue, so Windows and macOS both need white
+ * ink; text, ghost and secondary buttons keep their own tokens. */
+export function themeOverridesForPlatform(desktopDark: boolean) {
+  if (!desktopDark) return naiveThemeOverrides
   const whiteInk = {
     textColorPrimary: '#ffffff',
     textColorHoverPrimary: '#ffffff',

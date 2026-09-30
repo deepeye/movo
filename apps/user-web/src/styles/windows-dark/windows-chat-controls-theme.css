@@ -1,7 +1,7 @@
 /* Windows-only dark user-web styles. */
 /* The model trigger has a unique upstream class. Target that button itself:
    layout- or open-state selectors stopped matching when the menu changed. */
-html.platform-windows.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"] {
+html.platform-desktop.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"] {
   color: #e2edfc !important;
   background-color: #233b59 !important;
   border: 1px solid #4a6688 !important;
@@ -11,48 +11,48 @@ html.platform-windows.theme-dark .app-shell .composer-card button[class*="hover:
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05) !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"]:hover,
-html.platform-windows.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"]:focus-visible {
+html.platform-desktop.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"]:hover,
+html.platform-desktop.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"]:focus-visible {
   color: #fff !important;
   background-color: #2d4d74 !important;
   border-color: #79a8e7 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"] svg {
+html.platform-desktop.theme-dark .app-shell .composer-card button[class*="hover:bg-slate-100"] svg {
   color: #b5cdec !important;
 }
 
 /* The leftmost composer footer control is the attachment (+) menu. Keep these
    selectors away from the model picker on the right. */
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > button {
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > button {
   color: #b5cdec !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > button:hover,
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > button:focus-visible {
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > button:hover,
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > button:focus-visible {
   color: #f1f6ff !important;
   background: #2b4668 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute {
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute {
   z-index: 50;
   background: #1b2b42 !important;
   border-color: #46607f !important;
   box-shadow: 0 18px 42px rgba(0, 0, 0, .4) !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button {
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button {
   color: #e2edfc !important;
   background: transparent !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button:hover,
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button:focus-visible {
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button:hover,
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button:focus-visible {
   color: #fff !important;
   background: #2b4d76 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button[aria-pressed="true"] {
+html.platform-desktop.theme-dark .app-shell .composer-card .composer-footer > .relative:first-child > .absolute > button[aria-pressed="true"] {
   color: #c5ddff !important;
   background: #25466f !important;
 }
@@ -73,44 +73,44 @@ html.platform-windows:not(.theme-dark) .app-shell .composer-card button[class*="
   border-color: #9bbce5 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 {
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 {
   background: #1b2940 !important;
   border-color: #3b5271 !important;
   box-shadow: 0 18px 46px rgba(0, 0, 0, .38) !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button,
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:hover,
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:focus-visible {
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button,
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:hover,
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:focus-visible {
   color: #e5eefb !important;
   background: #1b2940 !important;
   border-color: transparent !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:hover,
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button.bg-blue-50\/80,
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button[aria-selected="true"],
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:has(> svg) {
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:hover,
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button.bg-blue-50\/80,
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button[aria-selected="true"],
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 > button:has(> svg) {
   background: #284669 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 .text-slate-900,
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 .text-slate-800 {
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 .text-slate-900,
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 .text-slate-800 {
   color: #f2f6ff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 .text-slate-500 {
+html.platform-desktop.theme-dark .app-shell .composer-card .relative.min-w-0 > .absolute.bottom-9 .text-slate-500 {
   color: #b4c6dd !important;
 }
 
 /* Keep the rounded outline fixed; only its highlighted segment travels along
    the perimeter, so the animation stays aligned with the stop button. */
-html.platform-windows.theme-dark .app-shell .composer-action__ring {
+html.platform-desktop.theme-dark .app-shell .composer-action__ring {
   animation: none !important;
   transform: none !important;
 }
 
-html.platform-windows.theme-dark .app-shell .composer-action__ring-dash {
+html.platform-desktop.theme-dark .app-shell .composer-action__ring-dash {
   stroke: #72a9fa !important;
   stroke-dasharray: 28 72 !important;
   animation: windows-composer-ring-track 1.4s linear infinite !important;

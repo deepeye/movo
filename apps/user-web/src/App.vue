@@ -92,10 +92,11 @@ const themeMode = ref<ThemeMode>(
     : 'system',
 )
 const isDarkTheme = ref(false)
+document.documentElement.classList.toggle('platform-desktop', capabilities.isDesktop)
 const isWindowsDesktop = capabilities.isDesktop && document.documentElement.classList.contains('platform-windows')
 const windowsSidebarCollapsed = ref(false)
 const platformThemeOverrides = computed(() => themeOverridesForPlatform(
-  isDarkTheme.value && document.documentElement.classList.contains('platform-windows'),
+  isDarkTheme.value && capabilities.isDesktop,
 ))
 let systemThemeMedia: MediaQueryList | null = null
 const themeOptions = [

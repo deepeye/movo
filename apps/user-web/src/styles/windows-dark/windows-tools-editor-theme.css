@@ -1,22 +1,22 @@
 /* Windows-only dark user-web styles. */
 /* The Tool wizard already has dark panels; its fixed light labels do not. */
-html.platform-windows.theme-dark .app-shell .tools-page :is(.content-title, .section-title, .editor-card-header, .debug-group-title) {
+html.platform-desktop.theme-dark .app-shell .tools-page :is(.content-title, .section-title, .editor-card-header, .debug-group-title) {
   color: #f0f5ff !important;
 }
 
-html.platform-windows.theme-dark .app-shell .tools-page :is(.muted, .debug-param-row label, .debug-overview span) {
+html.platform-desktop.theme-dark .app-shell .tools-page :is(.muted, .debug-param-row label, .debug-overview span) {
   color: #b5c7de !important;
 }
 
-html.platform-windows.theme-dark .app-shell .tools-page :is(.debug-overview, .debug-param-row, .step-panel) {
+html.platform-desktop.theme-dark .app-shell .tools-page :is(.debug-overview, .debug-param-row, .step-panel) {
   border-color: #40536f !important;
 }
 
-html.platform-windows.theme-dark .app-shell .tools-page .debug-overview {
+html.platform-desktop.theme-dark .app-shell .tools-page .debug-overview {
   background: #1c2b42 !important;
 }
 
-html.platform-windows.theme-dark .app-shell .tools-page :is(.n-input, .n-base-selection) {
+html.platform-desktop.theme-dark .app-shell .tools-page :is(.n-input, .n-base-selection) {
   --n-color: #142238 !important;
   --n-color-active: #142238 !important;
   --n-text-color: #edf4ff !important;
