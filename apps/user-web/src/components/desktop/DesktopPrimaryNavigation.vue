@@ -106,6 +106,8 @@ const items = computed<NavigationItem[]>(() => [
   --desktop-nav-active-border: #dce5f2;
   --desktop-nav-tooltip-bg: #172033;
   --desktop-nav-tooltip-ink: #f8fafc;
+  --desktop-nav-avatar-border: #c3cdda;
+  --desktop-nav-avatar-shadow: rgba(15, 23, 42, .14);
   display: flex;
   width: 52px;
   min-height: 0;
@@ -228,16 +230,17 @@ const items = computed<NavigationItem[]>(() => [
   margin-top: auto;
   padding: 0;
   overflow: visible;
-  border: 2px solid rgba(255, 255, 255, .78);
+  border: 1px solid var(--desktop-nav-avatar-border);
   border-radius: 10px;
   color: #fff;
   background: linear-gradient(145deg, #3b82f6, #4f46e5);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, .16);
+  box-shadow: 0 2px 7px var(--desktop-nav-avatar-shadow);
   cursor: pointer;
 }
 
 .desktop-primary-nav__account:hover {
-  box-shadow: 0 4px 12px rgba(15, 23, 42, .24);
+  border-color: var(--desktop-nav-active-ink);
+  box-shadow: 0 4px 11px var(--desktop-nav-avatar-shadow);
 }
 
 .desktop-primary-nav__account:focus-visible {
@@ -295,6 +298,8 @@ const items = computed<NavigationItem[]>(() => [
   --desktop-nav-active-border: #50555e;
   --desktop-nav-tooltip-bg: #e2e8f0;
   --desktop-nav-tooltip-ink: #0f172a;
+  --desktop-nav-avatar-border: #525a66;
+  --desktop-nav-avatar-shadow: rgba(0, 0, 0, .34);
 }
 
 :global(html.platform-desktop.theme-dark .desktop-primary-nav__badge) {
