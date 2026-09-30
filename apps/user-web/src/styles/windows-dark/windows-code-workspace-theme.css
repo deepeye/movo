@@ -1,0 +1,206 @@
+/* Code conversations and project tools in Windows browser and Electron only. */
+html.platform-windows.theme-dark .assistant-markdown .assistant-code-block {
+  border-color: #344860 !important;
+  background: #111c2c !important;
+  box-shadow: none !important;
+}
+html.platform-windows.theme-dark .assistant-markdown .assistant-code-header {
+  border-color: #344860 !important;
+  background: #1d2b40 !important;
+}
+html.platform-windows.theme-dark .assistant-markdown .assistant-code-language { color: #adc0d8 !important; }
+html.platform-windows.theme-dark .assistant-markdown .assistant-code-scroll,
+html.platform-windows.theme-dark .assistant-markdown .assistant-code-content {
+  background: #111c2c !important;
+  color: #e0e9f5 !important;
+}
+html.platform-windows.theme-dark .assistant-markdown .assistant-code-content { text-shadow: none !important; }
+/* Inline paths should read as annotations, not bright cards in the answer. */
+html.platform-windows.theme-dark .assistant-markdown .assistant-inline-code {
+  border: 1px solid #36506d !important;
+  background: #203149 !important;
+  color: #bdd8fb !important;
+  box-shadow: none !important;
+}
+html.platform-windows.theme-dark .assistant-markdown .assistant-file-reference {
+  border-color: #3b5c80 !important;
+  background: #203149 !important;
+  color: #bdd8fb !important;
+  box-shadow: none !important;
+}
+html.platform-windows.theme-dark .assistant-markdown .assistant-file-reference:hover {
+  border-color: #6697cf !important;
+  background: #2a4261 !important;
+  color: #e2f0ff !important;
+}
+html.platform-windows.theme-dark .assistant-markdown .assistant-file-reference:focus-visible {
+  outline: 2px solid #8cbcff !important;
+  outline-offset: 2px;
+}
+
+html.platform-windows.theme-dark .chat-pane > header,
+html.platform-windows.theme-dark .chat-pane .bg-white.border-b {
+  border-color: #34445c !important;
+  background: #0e192b !important;
+  color: #e2eaf5 !important;
+}
+html.platform-windows.theme-dark .chat-pane > header .text-slate-700,
+html.platform-windows.theme-dark .chat-pane .bg-white.border-b .text-slate-700 { color: #e2eaf5 !important; }
+html.platform-windows.theme-dark .desktop-window-chrome__context .header-trigger {
+  background: transparent !important;
+  color: #a9bbd1 !important;
+}
+html.platform-windows.theme-dark .desktop-window-chrome__context .header-trigger:is(:hover, .selected) {
+  background: #263a55 !important;
+  color: #c3ddff !important;
+}
+html.platform-windows.theme-dark .desktop-window-chrome__context .branch-trigger { color: #b8c9df !important; }
+html.platform-windows.theme-dark .desktop-window-chrome__context .branch-trigger:disabled { opacity: .8 !important; }
+/* Header tool actions have separate light-mode active rules in their components. */
+html.platform-windows.theme-dark .desktop-window-chrome__actions :is(.desktop-window-chrome__icon-button, .browser-test-button.icon-only) {
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #a9bbd1 !important;
+  box-shadow: none !important;
+}
+html.platform-windows.theme-dark .desktop-window-chrome__actions :is(.desktop-window-chrome__icon-button, .browser-test-button.icon-only):hover:not(:disabled) {
+  border-color: #405674 !important;
+  background: #263a55 !important;
+  color: #e2f0ff !important;
+}
+html.platform-windows.theme-dark .desktop-window-chrome__actions :is(.desktop-window-chrome__icon-button, .browser-test-button.icon-only).active {
+  border-color: #50749e !important;
+  background: #25436a !important;
+  color: #d8eaff !important;
+}
+html.platform-windows.theme-dark .desktop-window-chrome__actions :is(.desktop-window-chrome__icon-button, .browser-test-button.icon-only).active:hover:not(:disabled) {
+  background: #2e507a !important;
+}
+html.platform-windows.theme-dark .desktop-window-chrome__actions :is(.desktop-window-chrome__icon-button, .browser-test-button.icon-only):focus-visible {
+  outline: 2px solid #8cbcff !important;
+  outline-offset: 2px;
+}
+html.platform-windows.theme-dark .desktop-window-chrome__badge { border-color: #0e192b !important; }
+
+html.platform-windows.theme-dark .browser-workspace .split-handle { background: #172438 !important; }
+html.platform-windows.theme-dark .browser-workspace .split-handle span { background: #5b7394 !important; }
+html.platform-windows.theme-dark .browser-workspace .browser-pane { border-color: #34445c !important; }
+html.platform-windows.theme-dark .browser-mini {
+  border-color: #405674 !important;
+  background: #17263a !important;
+  box-shadow: 0 18px 44px #02061766 !important;
+}
+html.platform-windows.theme-dark .browser-mini .browser-mini__header { border-color: #405674 !important; }
+html.platform-windows.theme-dark .browser-mini .browser-mini__status { box-shadow: 0 0 0 3px #255342 !important; }
+html.platform-windows.theme-dark .electron-browser .recording-message {
+  border-color: #405674 !important;
+  background: #203149 !important;
+  color: #c7d8ec !important;
+}
+html.platform-windows.theme-dark .tool-tab-bar,
+html.platform-windows.theme-dark .tool-tab-actions,
+html.platform-windows.theme-dark .electron-browser,
+html.platform-windows.theme-dark .electron-browser .browser-toolbar,
+html.platform-windows.theme-dark .electron-browser .browser-surface,
+html.platform-windows.theme-dark .electron-browser .tab-strip {
+  border-color: #34445c !important;
+  background: #111b2b !important;
+  color: #dce7f5 !important;
+}
+html.platform-windows.theme-dark .tool-tab,
+html.platform-windows.theme-dark .electron-browser .browser-tab { color: #a9bbd1 !important; }
+html.platform-windows.theme-dark .tool-tab:hover,
+html.platform-windows.theme-dark .electron-browser .browser-tab:hover,
+html.platform-windows.theme-dark .tool-tab-bar :is(.tab-close, .new-tab, .panel-close):hover,
+html.platform-windows.theme-dark .electron-browser :is(.tab-close, .new-tab, .icon-command, .panel-close, .resume-command):hover {
+  background: #263a55 !important;
+  color: #f1f6ff !important;
+}
+html.platform-windows.theme-dark .tool-tab.active,
+html.platform-windows.theme-dark .electron-browser .browser-tab.active {
+  border-color: #405674 !important;
+  background: #203650 !important;
+  color: #c3ddff !important;
+}
+html.platform-windows.theme-dark .tool-tab-bar .new-tab-menu,
+html.platform-windows.theme-dark .electron-browser :is(.owner-label, .record-command) {
+  border-color: #405674 !important;
+  background: #1b2b41 !important;
+  color: #dce7f5 !important;
+}
+html.platform-windows.theme-dark .tool-tab-bar .new-tab-menu button { color: #dce7f5 !important; }
+html.platform-windows.theme-dark .tool-tab-bar .new-tab-menu button:hover { background: #263a55 !important; }
+html.platform-windows.theme-dark .electron-browser .address-input {
+  border-color: #405674 !important;
+  background: #1b2b41 !important;
+  color: #e2eaf5 !important;
+}
+html.platform-windows.theme-dark .electron-browser .address-input:focus { border-color: #76a9ee !important; box-shadow: 0 0 0 1px #76a9ee !important; }
+
+html.platform-windows.theme-dark .changes nav,
+html.platform-windows.theme-dark .file-browser nav { border-color: #34445c !important; background: #142034 !important; }
+html.platform-windows.theme-dark .file-browser .file-preview {
+  background: #111b2b !important;
+  color: #dce7f5 !important;
+}
+html.platform-windows.theme-dark .file-browser .file-preview .state { color: #a9bbd1 !important; }
+html.platform-windows.theme-dark .file-browser .file-preview .state.error { color: #ffadb9 !important; }
+html.platform-windows.theme-dark .changes :is(.overview, .metrics > div, .filter),
+html.platform-windows.theme-dark .file-browser :is(main, .preview-heading) {
+  border-color: #34445c !important;
+  background: #17263a !important;
+  color: #dce7f5 !important;
+}
+html.platform-windows.theme-dark .changes :is(.branch, .metrics strong, .filter input),
+html.platform-windows.theme-dark .file-browser .preview-file strong { color: #e2eaf5 !important; }
+html.platform-windows.theme-dark .changes :is(.metrics span, .filter input::placeholder) { color: #a9bbd1 !important; }
+html.platform-windows.theme-dark .changes .filter:focus-within { border-color: #76a9ee !important; box-shadow: 0 0 0 2px #355b88 !important; }
+html.platform-windows.theme-dark .changes .commit-button { border-color: #405674 !important; background: #203650 !important; color: #dce7f5 !important; }
+html.platform-windows.theme-dark .changes main { background: #111b2b !important; }
+html.platform-windows.theme-dark .changes .diff-heading { border-color: #34445c !important; background: #17263a !important; }
+html.platform-windows.theme-dark .changes .diff-table,
+html.platform-windows.theme-dark .file-browser .code-preview { background: #111b2b !important; color: #dce7f5 !important; }
+html.platform-windows.theme-dark .file-browser .code-preview {
+  font-size: 13px;
+  line-height: 1.75;
+  text-shadow: none !important;
+}
+html.platform-windows.theme-dark .file-browser .code-preview :is(.hljs-comment, .hljs-quote) { color: #a8b8ca !important; }
+html.platform-windows.theme-dark .file-browser .code-preview :is(.hljs-keyword, .hljs-selector-tag, .hljs-literal) { color: #d5b9ff !important; }
+html.platform-windows.theme-dark .file-browser .code-preview :is(.hljs-string, .hljs-attr) { color: #a9dfbb !important; }
+html.platform-windows.theme-dark .file-browser .code-preview :is(.hljs-number, .hljs-attribute) { color: #ffc39b !important; }
+html.platform-windows.theme-dark .file-browser .code-preview :is(.hljs-title, .hljs-function) { color: #a9ceff !important; }
+html.platform-windows.theme-dark .file-browser .code-preview :is(.hljs-built_in, .hljs-type) { color: #f1d28f !important; }
+html.platform-windows.theme-dark .file-browser .code-preview :is(.hljs-meta, .hljs-tag) { color: #9bdbe8 !important; }
+html.platform-windows.theme-dark .changes .diff-row .line-number { border-color: #34445c !important; background: #111b2b !important; color: #a9bbd1 !important; }
+html.platform-windows.theme-dark .changes .diff-row.add,
+html.platform-windows.theme-dark .changes .diff-row.add .line-number { background: #14392e !important; color: #b9efd0 !important; }
+html.platform-windows.theme-dark .changes .diff-row.delete,
+html.platform-windows.theme-dark .changes .diff-row.delete .line-number { background: #452630 !important; color: #ffd2d8 !important; }
+html.platform-windows.theme-dark .changes .diff-row.hunk,
+html.platform-windows.theme-dark .changes .diff-row.hunk .line-number { background: #1a3454 !important; color: #b8d7ff !important; }
+
+/* The inline task-change summary is a separate Vue component, not the Changes panel. */
+html.platform-windows.theme-dark .change-card {
+  border-color: #38506e !important;
+  background: #17263b !important;
+  color: #e2eaf5 !important;
+  box-shadow: 0 6px 18px #07111f33 !important;
+}
+html.platform-windows.theme-dark .change-card header { border-color: #34445c !important; }
+html.platform-windows.theme-dark .change-card .summary-icon { background: #253c58 !important; color: #a9ceff !important; }
+html.platform-windows.theme-dark .change-card .summary-copy strong { color: #edf4ff !important; }
+html.platform-windows.theme-dark .change-card :is(.file-row, .expand-button) { color: #c2d2e8 !important; }
+html.platform-windows.theme-dark .change-card :is(.file-row, .expand-button):hover,
+html.platform-windows.theme-dark .change-card :is(.file-row, .expand-button):focus-visible { background: #243b57 !important; color: #f0f6ff !important; }
+html.platform-windows.theme-dark .change-card :is(.undo-button, .review-button) { border-color: #476487 !important; background: #203650 !important; color: #dce9fb !important; }
+html.platform-windows.theme-dark .change-card :is(.undo-button, .review-button):hover,
+html.platform-windows.theme-dark .change-card :is(.undo-button, .review-button):focus-visible { border-color: #79aaf0 !important; background: #2a486d !important; color: #fff !important; }
+html.platform-windows.theme-dark .change-card :is(.file-row, .expand-button, .undo-button, .review-button):focus-visible { outline: 2px solid #82b6ff !important; outline-offset: -2px; }
+html.platform-windows.theme-dark .change-card .summary-copy b,
+html.platform-windows.theme-dark .change-card .file-row b { color: #83ddb0 !important; }
+html.platform-windows.theme-dark .change-card .summary-copy i,
+html.platform-windows.theme-dark .change-card .file-row i { color: #ff9ca8 !important; }
+html.platform-windows.theme-dark .change-card.undone { border-color: #35725b !important; background: #16342b !important; }
+html.platform-windows.theme-dark .change-card.undone .summary-icon { background: #235241 !important; color: #a6ecc9 !important; }
+html.platform-windows.theme-dark .change-card .undo-error { border-color: #784653 !important; background: #3b2633 !important; color: #ffbdc8 !important; }

@@ -1,6 +1,11 @@
 export function codeRuntimeErrorMessage(error: unknown, locale: 'zh' | 'en'): string {
   const raw = String(error instanceof Error ? error.message : error || '')
   const normalized = raw.toLowerCase()
+  if (normalized.includes('already owned by an active write handle')) {
+    return locale === 'zh'
+      ? '此会话正在恢复中，请稍后重试。若问题持续，请重启桌面端。'
+      : 'This task is already being restored. Retry shortly; restart the desktop app if it persists.'
+  }
   if (normalized.includes('another desktop device')) {
     return locale === 'zh'
       ? '此项目会话绑定在另一台桌面设备。历史记录可查看，但请回到原设备继续执行。'

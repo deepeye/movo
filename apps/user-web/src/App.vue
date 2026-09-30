@@ -412,9 +412,13 @@ function selectBoundProject(key: string, workspace: DshWorkspace): void {
 }
 
 async function chooseProjectFolder(): Promise<void> {
-  const workspace = await selectDshWorkspace()
-  if (!workspace) return
-  createProjectWorkspace.value = workspace
+  try {
+    const workspace = await selectDshWorkspace()
+    if (!workspace) return
+    createProjectWorkspace.value = workspace
+  } catch (error) {
+    shareToast.error(error instanceof Error ? error.message : String(error), { duration: 10000 })
+  }
 }
 
 function workspaceFolderName(workspace: DshWorkspace): string {

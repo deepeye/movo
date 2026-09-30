@@ -44,6 +44,7 @@ await assert.rejects(web.switchDshWorkspaceBranch('workspace-a', 'refs\/heads\/m
 assert.match(codeRuntimeErrorMessage(new Error('Code Session belongs to another desktop device'), 'zh'), /另一台桌面设备/)
 assert.match(codeRuntimeErrorMessage(new Error('Code Session Workspace is unavailable or missing'), 'zh'), /项目目录已丢失/)
 assert.match(codeRuntimeErrorMessage(new Error('Runtime Profile changed'), 'en'), /incompatible/)
+assert.match(codeRuntimeErrorMessage(new Error('session is already owned by an active write handle'), 'en'), /being restored/)
 const changeTree = buildWorkspaceChangeTree([
   { path: 'src/app.ts', status: 'M', additions: 2, deletions: 1, binary: false },
   { path: 'src/api/client.ts', status: 'A', additions: 8, deletions: 0, binary: false },

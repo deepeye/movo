@@ -8,6 +8,7 @@ import python from 'highlight.js/lib/languages/python'
 import sql from 'highlight.js/lib/languages/sql'
 import typescript from 'highlight.js/lib/languages/typescript'
 import xml from 'highlight.js/lib/languages/xml'
+import yaml from 'highlight.js/lib/languages/yaml'
 import { fileTypePresentation } from './changePresentation'
 
 hljs.registerLanguage('bash', bash)
@@ -19,6 +20,7 @@ hljs.registerLanguage('python', python)
 hljs.registerLanguage('sql', sql)
 hljs.registerLanguage('typescript', typescript)
 hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('yaml', yaml)
 
 const languageByTone = {
   typescript: 'typescript', javascript: 'javascript', python: 'python', vue: 'xml', json: 'json', web: 'xml', style: 'css', markdown: 'markdown', config: 'json', shell: 'bash', database: 'sql', native: 'javascript', generic: '',
@@ -30,8 +32,9 @@ function escapeHtml(value: string) {
 
 export function syntaxLanguage(path: string, language?: string) {
   const requested = (language || '').toLowerCase()
-  const aliases: Record<string, string> = { ts: 'typescript', typescript: 'typescript', js: 'javascript', javascript: 'javascript', py: 'python', python: 'python', html: 'xml', vue: 'xml', yml: 'json', yaml: 'json', md: 'markdown', sh: 'bash', shell: 'bash' }
+  const aliases: Record<string, string> = { ts: 'typescript', typescript: 'typescript', js: 'javascript', javascript: 'javascript', py: 'python', python: 'python', html: 'xml', vue: 'xml', yml: 'yaml', yaml: 'yaml', md: 'markdown', sh: 'bash', shell: 'bash' }
   if (requested && aliases[requested]) return aliases[requested]
+  if (/\.ya?ml$/i.test(path)) return 'yaml'
   return languageByTone[fileTypePresentation(path).tone]
 }
 

@@ -182,9 +182,23 @@ const completedHtml = renderAssistantMarkdown(streamed)
 
 {
   const code = renderAssistantMarkdown('```text\nconst answer = 42\n```')
-  assert.match(code, /class="assistant-code-block /)
-  assert.match(code, /class="assistant-code-content /)
+  assert.match(code, /class="assistant-code-block"/)
+  assert.match(code, /class="assistant-code-content"/)
+  assert.match(code, /class="assistant-code-copy"/)
   assert.doesNotMatch(code, /bg-gray-900|bg-gray-800|text-gray-200/)
+
+  const proseLookingCode = renderAssistantMarkdown('```markdown\n# literal heading\n| A | B |\n| --- | --- |\n```')
+  assert.match(proseLookingCode, /class="assistant-code-block"/)
+  assert.match(proseLookingCode, /# literal heading/)
+  assert.doesNotMatch(proseLookingCode, /<h1|<table/)
+
+  const highlighted = renderAssistantMarkdown('```ts\nconst answer: number = 42\n```')
+  assert.match(highlighted, /class="hljs-/)
+  const escaped = renderAssistantMarkdown('~~~html\n<script>alert(1)</script>\n~~~')
+  assert.match(escaped, /&lt;/)
+  assert.match(escaped, /script/)
+  assert.doesNotMatch(escaped, /<script>/)
+  assert.match(renderAssistantMarkdown('```js\nconst pending = true'), /class="assistant-code-block"/)
 }
 
 {

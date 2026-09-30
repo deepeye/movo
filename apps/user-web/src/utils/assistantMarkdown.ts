@@ -1,6 +1,7 @@
 /** Shared Markdown projection for streaming and completed assistant content. */
 
 import { projectSafeMarkdownLinks } from './safeMarkdownLinks'
+import { extractAssistantCodeBlocks } from './assistantCodeBlocks'
 
 function escapeHtml(value: string): string {
   return value
@@ -17,7 +18,7 @@ export function normalizeAssistantContent(content: string): string {
   const result: string[] = []
   let inCodeBlock = false
   for (const line of lines) {
-    if (line.trim().startsWith('```')) {
+    if (/^\s{0,3}(?:`{3,}|~{3,})/.test(line)) {
       inCodeBlock = !inCodeBlock
       result.push(line)
       continue
@@ -60,62 +61,17 @@ export function workspaceFileReference(value: string): string | null {
 }
 
 export function renderAssistantMarkdown(text: string, options: { workspaceFileReferences?: boolean } = {}): string {
-  let html = normalizeAssistantContent(text)
-  const blocks: string[] = []
+  const extracted = extractAssistantCodeBlocks(normalizeAssistantContent(text), sanitizeMermaid)
+  let html = extracted.text
+  const blocks: string[] = [...extracted.blocks]
   const stash = (value: string) => {
     const key = `__BLOCK_PLACEHOLDER_${blocks.length}__`
     blocks.push(value)
     return key
   }
 
-  html = html.replace(/```\s*skill\s*([\s\S]*?)```/g, (_match, code) => stash(`
-    <div class="assistant-code-block assistant-code-block--skill my-4 rounded-lg overflow-hidden">
-      <div class="assistant-code-header flex items-center px-3 py-2">
-        <span class="assistant-code-language text-xs font-bold uppercase tracking-wider">Skill Definition</span>
-      </div>
-      <div class="assistant-code-scroll p-3 overflow-x-auto"><pre class="assistant-code-content text-xs font-mono leading-relaxed whitespace-pre">${escapeHtml(String(code || '').trim())}</pre></div>
-    </div>
-  `))
-
-  html = html.replace(/```\s*mermaid\s*([\s\S]*?)```/g, (_match, code) => {
-    const safe = sanitizeMermaid(String(code || '').trim())
-    return stash(`<div class="mermaid" data-raw="${encodeURIComponent(safe)}">${safe}</div>`)
-  })
-  html = html.replace(/(?:`{2,4})\s*chart\s*([\s\S]*?)(?:`{2,4})/g, (_match, code) => {
-    const json = String(code || '').trim()
-    return stash(`<div class="chart-container" style="height:360px"><canvas class="chart-block" data-chart="${encodeURIComponent(json)}"></canvas></div>`)
-  })
   html = html.replace(/!\[(.*?)\]\((.*?)\)/g, '<img alt="$1" src="$2" style="max-width:100%; border-radius:12px;" />')
   html = html.replace(/^---+$/gm, '<hr class="my-4 border-gray-300"/>')
-  html = html.replace(/```\s*([\s\S]*?\|[\s\S]*?\n[\s\S]*?\|[\s\S]*?)```/g, (_match, table) => String(table || '').trim())
-
-  html = html.replace(/```([a-zA-Z0-9_-]*)\s*([\s\S]*?)```/g, (_match, lang, code) => {
-    const content = String(code || '').trim()
-    const language = String(lang || '').trim().toLowerCase()
-    const markdownSignals =
-      (content.match(/^#{1,6}\s+/gm)?.length || 0)
-      + (content.match(/^\s*[-*]\s+/gm)?.length || 0)
-      + (content.match(/^\s*[–—]\s+/gm)?.length || 0)
-      + (content.match(/^\s*\d+\.\s+/gm)?.length || 0)
-      + (content.match(/^\s*---+\s*$/gm)?.length || 0)
-      + (content.match(/<hr\b[^>]*>/gi)?.length || 0)
-    const paragraphSignals = (content.match(/[。！？.!?]\s*(?:\n|$)/g)?.length || 0) + (content.match(/\n\s*\n/g)?.length || 0)
-    const codeSignals =
-      (content.match(/\b(function|class|const|let|var|def|import|return|if|else|for|while|try|catch)\b/g)?.length || 0)
-      + (content.match(/[{};=]/g)?.length || 0)
-      + (content.match(/<\s*(script|style|div|span|table|tr|td|th)\b/gi)?.length || 0)
-    const prose = (markdownSignals >= 2 && paragraphSignals >= 1 && codeSignals <= 12)
-      || (markdownSignals >= 3 && codeSignals <= 16)
-      || (['', 'text', 'plaintext', 'markdown', 'md'].includes(language) && markdownSignals >= 1 && codeSignals <= 20)
-    if (prose) return content
-    const label = language ? language.toUpperCase() : 'TEXT'
-    return stash(`
-      <div class="assistant-code-block my-4 rounded-lg overflow-hidden group">
-        <div class="assistant-code-header flex items-center justify-between px-3 py-1.5"><span class="assistant-code-language text-xs font-medium select-none">${label}</span></div>
-        <div class="assistant-code-scroll p-3 overflow-x-auto"><pre class="assistant-code-content text-sm font-mono leading-relaxed whitespace-pre table min-w-full">${escapeHtml(content)}</pre></div>
-      </div>
-    `)
-  })
 
   html = html.replace(/`([^`]+)`/g, (_match, raw) => {
     const content = String(raw || '')

@@ -94,3 +94,90 @@ html.platform-windows.theme-dark .app-shell .workspace-choices .add-project:focu
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Project details and run-mode chooser share the picker shell but not the list markup. */
+html.platform-windows.theme-dark .app-shell .workspace-menu:has(.workspace-heading) {
+  background: #18283d !important;
+  border-color: #405875 !important;
+  color: #e9f1fd !important;
+  box-shadow: 0 24px 52px #02081270 !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-menu .project-mark {
+  background: #284566 !important;
+  color: #9dc9ff !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-menu .workspace-heading span,
+html.platform-windows.theme-dark .app-shell .workspace-menu .detail-grid span,
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options legend,
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options small {
+  color: #afc3dc !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-menu .heading-copy {
+  background: transparent !important;
+  color: #a9c9f0 !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .heading-copy:is(:hover, :focus-visible) {
+  background: #2a4565 !important;
+  color: #f2f7ff !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-menu .detail-grid {
+  border-color: #405875 !important;
+  background: #405875 !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .detail-grid > div {
+  background: #1c3049 !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .detail-grid strong,
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options strong {
+  color: #eef5ff !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options button {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #e0eaf8 !important;
+  transition: background-color 180ms ease, border-color 180ms ease !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options button:is(:hover, :focus-visible) {
+  background: #263f5d !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options button.active,
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options button.active:is(:hover, :focus-visible) {
+  border-color: #679be0 !important;
+  background: #234369 !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options .radio {
+  border-color: #9db4d0 !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options .active .radio {
+  border-color: #88baff !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options .active .radio i {
+  background: #88baff !important;
+}
+
+html.platform-windows.theme-dark .app-shell .workspace-menu .menu-actions {
+  border-color: #405875 !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .menu-actions button {
+  background: #18283d !important;
+  color: #dbe9fb !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu .menu-actions button:is(:hover, :focus-visible) {
+  background: #29486d !important;
+  color: #fff !important;
+}
+html.platform-windows.theme-dark .app-shell .workspace-menu button:focus-visible {
+  outline: 2px solid #8abaff !important;
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.platform-windows.theme-dark .app-shell .workspace-menu .mode-options button {
+    transition-duration: 0.001ms !important;
+  }
+}

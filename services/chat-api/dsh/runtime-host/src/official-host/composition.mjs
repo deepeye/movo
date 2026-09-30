@@ -10,6 +10,8 @@ import {
 import { collectInsertedEntryIds } from './overlay-planner.mjs'
 import { extractOfficialPresetIsolation } from './preset-isolation.mjs'
 import { readPluginInventory } from './inventory-compat.mjs'
+import { recoverWindowsStaleModuleLock } from './windows-stale-module-lock.mjs'
+import { recoverWindowsEmptyModuleFallbacks } from './windows-empty-module-fallbacks.mjs'
 
 const MODULE_DIR = dirname(fileURLToPath(import.meta.url))
 const RUNTIME_HOST_ROOT = resolve(MODULE_DIR, '..', '..')
@@ -34,6 +36,8 @@ export class OfficialDshHostComposition {
     const profileRoot = resolve(profileDir, 'cordis.yml')
     await mkdir(profileDir, { recursive: true })
     await writeFile(profileRoot, await readFile(ROOT_CONFIG, 'utf8'))
+    await recoverWindowsStaleModuleLock(moduleHome)
+    await recoverWindowsEmptyModuleFallbacks(moduleHome)
     await healModuleFallback(appBoot, installation, moduleHome)
     const basePatches = appBoot.loadOverlayPatches('askai-dsh-host', installation.basePatchPath)
     const webAppPatches = appBoot.loadOverlayPatches(
