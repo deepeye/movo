@@ -17,7 +17,9 @@ test('Windows detection works in browsers and Electron without marking Mac', () 
 test('every shared Windows selector is platform- and theme-gated', () => {
   const directory = resolve(import.meta.dirname, '../src/styles/windows-dark')
   const files = readdirSync(directory).filter(name => name !== 'index.css' && name.endsWith('.css'))
-  assert.equal(files.length, 19)
+  const indexCss = readFileSync(resolve(directory, 'index.css'), 'utf8')
+  const imports = [...indexCss.matchAll(/@import '\.\/([^']+\.css)';/g)].map(match => match[1])
+  assert.deepEqual(files.sort(), imports.sort())
   for (const file of files) {
     const root = postcss.parse(readFileSync(resolve(directory, file), 'utf8'), { from: file })
     root.walkRules(rule => {
