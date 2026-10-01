@@ -2938,6 +2938,7 @@ onBeforeUnmount(() => {
               :foreign-run="pane.foreignRun"
               :foreign-run-finished="pane.foreignRunFinished"
               :refreshing-session="pane.refreshingSession"
+              :busy-notice="pane.busyNotice"
               :stopping="pane.stopping || codeRuntime.stateFor(pane.key).stopping"
               :active-intervention="pane.activeIntervention"
               :code-workspace="codeRuntime.stateFor(pane.key).workspace"
