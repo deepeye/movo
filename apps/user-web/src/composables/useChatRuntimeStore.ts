@@ -417,7 +417,7 @@ async function refreshPaneLiveState(pane: ChatRuntimePane, generation: number, s
   if (!auth || !paneLiveCallbackValid(pane, generation, sessionId)) return
   const sequence = pane.liveRefreshSeq + 1
   pane.liveRefreshSeq = sequence
-  let detail: SessionRuntimeDetail
+  let detail: SessionDetail
   try {
     detail = await getSession(sessionId, auth.userId, auth.mainId, auth.authToken)
   } catch {
@@ -462,7 +462,7 @@ async function handlePaneLiveStreamError(
   if (status !== 401 && status !== 404 && status !== 410) return
   const auth = pane.liveAuth
   if (!auth) return
-  let detail: SessionRuntimeDetail | null = null
+  let detail: SessionDetail | null = null
   try {
     detail = await getSession(sessionId, auth.userId, auth.mainId, auth.authToken)
   } catch {
