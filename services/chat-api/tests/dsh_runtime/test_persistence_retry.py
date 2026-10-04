@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 from bson.errors import InvalidDocument
+from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, BulkWriteError
 
 from app.dsh_runtime.events.persistence_retry import (
@@ -12,7 +13,11 @@ from app.dsh_runtime.events.persistence_retry import (
     is_retryable_persistence_error,
     retry_persistence,
 )
-from app.dsh_runtime.events.repository import KernelEventRepository, KernelEventWrite
+from app.dsh_runtime.events.repository import (
+    MESSAGE_STREAM_COUNTER,
+    KernelEventRepository,
+    KernelEventWrite,
+)
 
 
 def test_transient_failure_is_retried_until_success() -> None:
@@ -92,12 +97,38 @@ def test_partial_batch_success_replays_both_idempotent_collections() -> None:
                 if self.fail_first and self.calls == 1:
                     raise AutoReconnect("projection connection dropped")
 
+        class _Messages:
+            """``chat_messages`` seam for the durable stream-ordinal reservation.
+
+            ``find_one_and_update`` mirrors ``ReturnDocument.AFTER``: the
+            returned row already reflects the atomic ``$inc``.
+            """
+
+            def __init__(self) -> None:
+                self.calls = 0
+                self.next_stream_seq = 0
+
+            async def find_one_and_update(self, filter, update, *, return_document):
+                assert return_document == ReturnDocument.AFTER
+                assert filter == {"message_id": "message"}
+                assert update == {"$inc": {MESSAGE_STREAM_COUNTER: 1}}
+                self.calls += 1
+                self.next_stream_seq += 1
+                return {"message_id": "message", MESSAGE_STREAM_COUNTER: self.next_stream_seq}
+
         inbox = _Collection()
         projections = _Collection(fail_first=True)
+        messages = _Messages()
 
         class _Database:
-            def __getitem__(self, name: str) -> _Collection:
-                return inbox if name == KernelEventRepository.INBOX else projections
+            def __getitem__(self, name: str) -> object:
+                if name == KernelEventRepository.INBOX:
+                    return inbox
+                if name == KernelEventRepository.PROJECTIONS:
+                    return projections
+                if name == KernelEventRepository.MESSAGES:
+                    return messages
+                raise KeyError(name)
 
         event = SimpleNamespace(
             event_id="event-1",
@@ -125,5 +156,9 @@ def test_partial_batch_success_replays_both_idempotent_collections() -> None:
         # both stable upserts repairs the projection without duplicating data.
         assert inbox.calls == 2
         assert projections.calls == 2
+        # The stream-ordinal reservation is drawn once per persist_batch call
+        # and is NOT re-run by the replay: the retry reuses the same ordinals,
+        # so a repeated batch can never burn a second ordinal block.
+        assert messages.calls == 1
 
     asyncio.run(run())

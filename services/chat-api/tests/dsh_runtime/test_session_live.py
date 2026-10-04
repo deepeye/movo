@@ -2208,6 +2208,16 @@ def test_t3_restart_sweep_finalizes_orphaned_claim_and_admits_next_send(
     monkeypatch.setattr(PresentationJobRepository, "recover_running", noop_async)
     monkeypatch.setattr(AuthoritativeDeliveryRepository, "ensure_indexes", noop_async)
 
+    # CI runs pytest with no .env, so DSH_MODEL_GATEWAY_SIGNING_SECRET (and
+    # the ASKAI_ADMIN_JWT_SECRET fallback) default to "" and application
+    # start() would reject the short secret. Provide an explicit test secret
+    # and clear the lru_cache so start() observes it (same cache-clear seam
+    # the settings env tests use); clear again on exit so no later test sees
+    # it cached.
+    monkeypatch.setenv(
+        "DSH_MODEL_GATEWAY_SIGNING_SECRET", "unit-test-signing-secret-0123456789"
+    )
+    get_settings.cache_clear()
     app = DshRuntimeApplication()
     harness.run(app.start())
     try:
@@ -2230,3 +2240,4 @@ def test_t3_restart_sweep_finalizes_orphaned_claim_and_admits_next_send(
         assert readmitted["active_turn"]["claim_state"] == "running"
     finally:
         harness.run(app.stop())
+        get_settings.cache_clear()
