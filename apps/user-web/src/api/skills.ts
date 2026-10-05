@@ -337,7 +337,7 @@ export async function installPersonalSkillZip(file: File, confirmReplace = false
   form.append('file', file)
   form.append('confirmReplace', String(confirmReplace))
   const res = await api.post('/skills/install-zip', form, {
-    headers: { 'Content-Type': 'multipart/form-data' }, timeout: 90000,
+    headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000,
   })
   return dataOf<SkillInstallResult>(res)
 }

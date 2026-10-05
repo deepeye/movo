@@ -38,7 +38,7 @@ def install_organization_skill_zip(*, main_id: str, filename: str, content: byte
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=90) as response:
+        with urllib.request.urlopen(request, timeout=300) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         raw = exc.read().decode("utf-8", errors="replace")

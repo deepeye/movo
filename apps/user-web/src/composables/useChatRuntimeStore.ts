@@ -585,7 +585,11 @@ async function sendMessage(key: string, input: SendInput, callbacks: RuntimeCall
     } else if (error?.name !== 'AbortError') {
       const recovered = await recoverDisconnectedStream().catch(() => false)
       if (!recovered && !ctrl.signal.aborted) {
-        const errText = String(error?.message || error || (input.locale === 'zh' ? '请求失败' : 'Request failed'))
+        const errText = error instanceof ChatStreamHttpError && error.code === 'topic_admission_denied'
+          ? (input.locale === 'zh'
+            ? '当前任务被准入规则拦截，请联系管理员。'
+            : 'This topic is outside the allowed scope. Contact your administrator to update the topic rules.')
+          : String(error?.message || error || (input.locale === 'zh' ? '请求失败' : 'Request failed'))
         const localErrorId = 'err_' + Math.random().toString(36).slice(2)
         ensureExecV3(assistantMsg).applyEvent({
           v: 3,

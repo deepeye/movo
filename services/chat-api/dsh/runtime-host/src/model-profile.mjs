@@ -9,6 +9,7 @@ const ALLOWED_FIELDS = new Set([
   'accessToken',
   'toolProfile',
   'skillProfile',
+  'bundleGatewayUrl',
 ])
 
 function nonEmptyString(value) {
@@ -72,6 +73,9 @@ export function normalizeModelProfile(modelProfile, profileVersion) {
   }
   if (modelProfile.skillProfile !== undefined) {
     validateSkillProfile(modelProfile.skillProfile)
+    if (modelProfile.skillProfile.skills.some(skill => skill.bundle_archive_id) && !nonEmptyString(modelProfile.bundleGatewayUrl)) {
+      throw new Error('modelProfile is missing bundleGatewayUrl')
+    }
   }
   return Object.freeze(structuredClone(modelProfile))
 }

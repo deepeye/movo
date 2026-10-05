@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import datetime
 import secrets
 import uuid
@@ -8,6 +7,7 @@ from typing import Any
 
 from app.core.db import get_db
 from app.core.tenant import add_main_scope, resolve_main_id
+from app.services.skill_packages.archive_store import archive_fields, delete_archive
 
 from .exporter import SkillShareExporter
 from .distribution import SkillDistributionService
@@ -76,7 +76,7 @@ class DirectSkillShareService:
             "mode": "direct",
             "token_hash": secrets.token_hex(32),
             "status": "active",
-            "archive_base64": base64.b64encode(snapshot.package.archive_bytes).decode("ascii"),
+            **await archive_fields(db, snapshot.package.archive_bytes, main_id=tenant_id, digest=snapshot.package.archive_digest),
             "digest": snapshot.package.archive_digest,
             "package": snapshot.package.package_summary(),
             "profile": snapshot.profile,
@@ -85,7 +85,11 @@ class DirectSkillShareService:
             "revoked_at": None,
             "recipient_count": len(members),
         }
-        await db[SHARE_COLLECTION].insert_one(share)
+        try:
+            await db[SHARE_COLLECTION].insert_one(share)
+        except Exception:
+            await delete_archive(db, share)
+            raise
         deliveries = []
         for member in members:
             recipient_id = str(member.get("_id") or "")
@@ -104,6 +108,7 @@ class DirectSkillShareService:
             await db[DELIVERY_COLLECTION].insert_many(deliveries)
         except Exception:
             await db[SHARE_COLLECTION].delete_one({"_id": share_id, "main_id": tenant_id})
+            await delete_archive(db, share)
             raise
         await db[DELIVERY_COLLECTION].update_many(
             {

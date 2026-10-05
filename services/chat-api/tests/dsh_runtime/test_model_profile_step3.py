@@ -101,6 +101,24 @@ def test_profile_compile_publish_rollback_disable_and_secret_exclusion() -> None
     asyncio.run(_test_profile_compile_publish_rollback_disable_and_secret_exclusion())
 
 
+def test_previous_runtime_bundle_with_inline_skill_still_loads() -> None:
+    current = asyncio.run(ModelProfileCompiler(FakeCatalog()).compile(tenant_id="tenant-a"))
+    document = current.model_dump(mode="json")
+    document["skills"] = [{
+        "name": "legacy-skill", "display_name": "Legacy Skill", "version": "skill-v1",
+        "source_id": "old-1", "source_scope": "personal", "kind": "ordinary",
+        "description": "Existing ZIP Skill", "content": "Follow these instructions.",
+        "bundle_digest": "a" * 64, "bundle_archive_base64": "YWJj",
+    }]
+    document["skill_versions"] = ["skill-v1"]
+    payload = {key: value for key, value in document.items() if key not in {"content_hash", "profile_version"}}
+    document["content_hash"] = ModelProfileCompiler.content_hash(payload)
+    document["profile_version"] = f"rp-{document['content_hash'][:24]}"
+    loaded = RuntimeProfileBundle.load(json.dumps(document))
+    assert loaded.skills[0].bundle_archive_base64 == "YWJj"
+    assert loaded.skills[0].bundle_archive_id == ""
+
+
 async def _test_profile_compile_publish_rollback_disable_and_secret_exclusion() -> None:
     catalog = FakeCatalog()
     compiler = ModelProfileCompiler(catalog)

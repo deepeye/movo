@@ -54,5 +54,6 @@ class MongoSkillCatalog:
                     ]
                     if resource_files:
                         row["runtime_bundle_base64"] = str(package.get("archive_base64") or "")
+                        row["runtime_bundle_archive_id"] = str(package.get("archive_gridfs_id") or "")
                         row["runtime_bundle_root"] = str(package.get("root_prefix") or "")
         return rows

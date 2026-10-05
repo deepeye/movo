@@ -204,7 +204,7 @@ export async function installSkillZip(file: File, confirmReplace = false): Promi
   form.append('file', file);
   form.append('confirmReplace', String(confirmReplace));
   const { data } = await apiClient.post<SkillInstallResult>('/api/skills/install-zip', form, {
-    headers: { 'Content-Type': 'multipart/form-data' }, timeout: 90000,
+    headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000,
   });
   return dataOf<SkillInstallResult>(data);
 }

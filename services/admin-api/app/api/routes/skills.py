@@ -453,10 +453,11 @@ async def install_skill_zip(
         raise HTTPException(status_code=400, detail={
             "code": "zip_required", "message": "请选择 ZIP 格式的 Skill 安装包", "file": filename,
         })
-    content = await file.read(5 * 1024 * 1024 + 1)
-    if len(content) > 5 * 1024 * 1024:
+    max_archive_bytes = 100 * 1024 * 1024
+    content = await file.read(max_archive_bytes + 1)
+    if len(content) > max_archive_bytes:
         raise HTTPException(status_code=413, detail={
-            "code": "archive_too_large", "message": "Skill ZIP 不能超过 5 MiB",
+            "code": "archive_too_large", "message": "Skill ZIP 不能超过 100 MiB",
         })
     result = install_organization_skill_zip(
         main_id=str(current_user.get("main_id") or "default"),

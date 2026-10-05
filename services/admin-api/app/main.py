@@ -16,6 +16,7 @@ from app.api.routes.knowledge_documents import ensure_indexes as ensure_knowledg
 from app.api.routes.knowledge_directories import ensure_indexes as ensure_knowledge_directory_indexes
 from app.api.routes.knowledge_settings import ensure_indexes as ensure_knowledge_settings_indexes
 from app.api.routes.page_collection import ensure_indexes as ensure_page_collection_indexes
+from app.topic_admission.service import ensure_indexes as ensure_topic_admission_indexes
 from app.services.admin_bootstrap import bootstrap_admin_user
 from app.services.directory_bootstrap import bootstrap_directory
 from app.services.organization_tools import repair_role_referenced_personal_tools
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
         await repair_role_referenced_personal_tools()
         await ensure_external_search_indexes()
         await ensure_page_collection_indexes()
+        await ensure_topic_admission_indexes()
         await ensure_knowledge_settings_indexes()
         await ensure_knowledge_document_indexes()
         await ensure_knowledge_directory_indexes()

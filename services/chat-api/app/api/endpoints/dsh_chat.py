@@ -38,6 +38,7 @@ from app.dsh_runtime.desktop_binding import DesktopSessionIdentity
 from app.dsh_runtime.turn_admission import admit_skill_selection
 from app.governance.position_policy import MongoEmployeePolicyResolver
 from app.governance.audit import record_position_policy_event
+from app.governance.topic_admission import TopicAdmissionDenied, require_topic
 
 
 router = APIRouter(tags=["dsh-chat"])
@@ -227,6 +228,8 @@ async def _start_chat_completions(
             status_code=409,
             detail={"code": "session_already_running", "message": str(exc), "session_id": conversation_id},
         ) from exc
+    except TopicAdmissionDenied as exc:
+        raise HTTPException(status_code=403, detail={"code": "topic_admission_denied", "message": str(exc)}) from exc
     except PermissionError as exc:
         raise HTTPException(
             status_code=403,
@@ -376,6 +379,10 @@ async def desktop_turn_start(
 ) -> ApiResponse:
     tenant_id, user_id, _ = await _identity(authorization)
     await _require_code_capability(tenant_id, user_id)
+    try:
+        await require_topic(main_id=tenant_id, user_id=user_id, text=payload.text)
+    except TopicAdmissionDenied as exc:
+        raise HTTPException(status_code=403, detail={"code": "topic_admission_denied", "message": str(exc)}) from exc
     try:
         data = await dsh_runtime_application.require_desktop_bindings().start_turn(
             tenant_id=tenant_id, user_id=user_id, device_id=payload.device_id,

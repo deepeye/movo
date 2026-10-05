@@ -8,6 +8,8 @@ import zipfile
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures('skill_gridfs')
+
 from app.services.skill_packages import validate_skill_package
 from app.services.skill_packages import installer as installer_module
 from app.services.skill_sharing import SkillShareError, SkillShareService

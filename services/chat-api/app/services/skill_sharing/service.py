@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import datetime
 import hashlib
 import secrets
@@ -10,6 +9,7 @@ from typing import Any
 from app.core.db import get_db
 from app.core.tenant import add_main_scope, resolve_main_id
 from app.services.skill_packages import SkillPackageInstaller, validate_skill_package
+from app.services.skill_packages.archive_store import archive_fields, read_archive, delete_archive
 
 from .exporter import SkillShareExporter
 from .distribution import SkillDistributionService
@@ -81,7 +81,7 @@ class SkillShareService:
             "owner": {"userId": str(owner_user_id)},
             "token_hash": self._token_hash(token),
             "status": "active",
-            "archive_base64": base64.b64encode(snapshot.package.archive_bytes).decode("ascii"),
+            **await archive_fields(db, snapshot.package.archive_bytes, main_id=tenant_id, digest=snapshot.package.archive_digest),
             "digest": snapshot.package.archive_digest,
             "package": snapshot.package.package_summary(),
             "profile": snapshot.profile,
@@ -89,7 +89,11 @@ class SkillShareService:
             "expires_at": expires_at,
             "revoked_at": None,
         }
-        await db[SHARE_COLLECTION].insert_one(row)
+        try:
+            await db[SHARE_COLLECTION].insert_one(row)
+        except Exception:
+            await delete_archive(db, row)
+            raise
         return {"shareId": share_id, "token": token, **self._preview(row)}
 
     async def preview(self, *, main_id: str, recipient_user_id: str, token: str) -> dict[str, Any]:
@@ -124,7 +128,7 @@ class SkillShareService:
         if conflict["hasConflict"] and not replace_existing:
             raise SkillShareError("skill_share_conflict", "A different Skill with the same package name is already installed", status_code=409)
         try:
-            archive = base64.b64decode(str(row.get("archive_base64") or ""), validate=True)
+            archive = await read_archive(db, row)
             package = validate_skill_package(archive)
         except Exception as exc:
             raise SkillShareError("skill_share_snapshot_invalid", "The shared Skill snapshot is unavailable") from exc

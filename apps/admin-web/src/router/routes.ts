@@ -202,6 +202,12 @@ export const appRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/settings/ExternalSearchSettingsPage.vue'),
         meta: { title: '页面采集设置', hideInMenu: true },
       },
+      {
+        path: '/settings/topic-admission',
+        name: 'TopicAdmissionSettings',
+        component: () => import('@/views/settings/ExternalSearchSettingsPage.vue'),
+        meta: { title: 'taskAdmission.title', hideInMenu: true },
+      },
     ],
   },
 ];

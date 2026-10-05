@@ -3,6 +3,7 @@ import { shortcutMessages } from './modules/shortcuts';
 import { modelMessages } from './modules/models';
 import { knowledgeMessages } from './modules/knowledge';
 import { settingsMessages } from './modules/settings';
+import { taskAdmissionMessages } from './modules/taskAdmission';
 import { organizationMessages } from './modules/organization';
 import { skillWorkflowMessages } from './modules/skillWorkflow';
 import { modelAccessMessages } from './modules/modelAccess';
@@ -16,6 +17,7 @@ export const uncoveredMessages = {
   ...modelMessages,
   ...knowledgeMessages,
   ...settingsMessages,
+  ...taskAdmissionMessages,
   ...organizationMessages,
   ...skillWorkflowMessages,
   ...modelAccessMessages,

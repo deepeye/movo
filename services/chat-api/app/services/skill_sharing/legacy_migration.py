@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import base64
 import logging
 from typing import Any
 
 from app.core.db import get_db
 from app.core.tenant import resolve_main_id
 from app.services.skill_packages import validate_skill_package
+from app.services.skill_packages.archive_store import read_archive
 
 from .distribution import SkillDistributionService
 from .exporter import ShareSnapshot
@@ -78,8 +78,9 @@ class LegacySkillShareMigration:
         owner_id, source_skill_id = str(share.get("owner_user_id") or ""), str(share.get("source_skill_id") or "")
         if not owner_id or not source_skill_id:
             return share
+        db = get_db()
         try:
-            archive = base64.b64decode(str(share.get("archive_base64") or ""), validate=True)
+            archive = await read_archive(db, share)
             package = validate_skill_package(archive)
         except Exception:
             return share
