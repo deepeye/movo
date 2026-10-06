@@ -103,6 +103,36 @@ class RuntimeCoordinator:
         argument. Without them (direct calls) the predecessor's values are
         kept. ``execution_location`` is always preserved.
         """
+        return await self._replace_binding(
+            binding,
+            profile_version=profile_version,
+            model_instance_id=model_instance_id,
+            seed=True,
+        )
+
+    async def replace_missing_binding(
+        self,
+        binding: dict[str, Any],
+        *,
+        profile_version: str,
+        model_instance_id: str,
+    ) -> dict[str, Any]:
+        """Replace a lost host session without trying to seed from it."""
+        return await self._replace_binding(
+            binding,
+            profile_version=profile_version,
+            model_instance_id=model_instance_id,
+            seed=False,
+        )
+
+    async def _replace_binding(
+        self,
+        binding: dict[str, Any],
+        *,
+        profile_version: str,
+        model_instance_id: str,
+        seed: bool,
+    ) -> dict[str, Any]:
         return await self.create_binding(
             tenant_id=str(binding["tenant_id"]),
             user_id=str(binding.get("speaker_user_id") or "") or str(binding["user_id"]),
@@ -121,8 +151,8 @@ class RuntimeCoordinator:
             execution_mode=str(binding.get("execution_mode") or "") or None,
             worktree=bool(binding.get("worktree")),
             replaces_binding_id=str(binding["binding_id"]),
-            seed_runtime_id=str(binding["runtime_id"]),
-            seed_session_id=str(binding["kernel_session_id"]),
+            seed_runtime_id=str(binding["runtime_id"]) if seed else None,
+            seed_session_id=str(binding["kernel_session_id"]) if seed else None,
         )
 
     async def dispose_restored_session(self, binding: dict[str, Any]) -> bool:

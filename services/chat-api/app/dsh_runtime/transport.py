@@ -8,7 +8,7 @@ from typing import Any, Protocol
 
 import httpx
 
-from .errors import DshProtocolError, DshTransportError
+from .errors import DshProtocolError, DshSessionMissingError, DshTransportError
 
 
 class KernelHostTransport(Protocol):
@@ -66,6 +66,15 @@ class HttpKernelHostTransport:
         if response.is_error:
             error = payload.get("error")
             message = error.get("message") if isinstance(error, dict) else response.reason_phrase
+            if (
+                response.status_code == 400
+                and method.upper() == "POST"
+                and path.endswith("/resume")
+                and isinstance(message, str)
+                and message.startswith('session "dsh-')
+                and message.endswith('" not found')
+            ):
+                raise DshSessionMissingError(message)
             raise DshTransportError(f"DSH Runtime Host rejected the request: {message}")
         return payload
 

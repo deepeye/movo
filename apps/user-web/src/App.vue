@@ -1961,7 +1961,7 @@ function shareSessionErrorToastMessage(error: SessionShareError): string {
   switch (error.code) {
     case 'session_not_found':
     case 'session_share_not_found':
-      return t('session.share.error_not_found')
+      return t('session.share.error_join_not_found')
     case 'session_share_owner_required':
     case 'session_share_participant_required':
     case 'session_share_no_binding':

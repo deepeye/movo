@@ -5,6 +5,7 @@ import { t } from '../../../composables/i18n'
 import ActivityIcon from './ActivityIcon.vue'
 import { activityOutcome, activityStateMessageKey } from '../domain/activityPresentation'
 import { toolActionLabelKey, toolCallSummary, toolDisplayName } from '../domain/repeatedToolCalls'
+import { failureMessageKey } from '../domain/failureMessage'
 
 const props = withDefaults(defineProps<{ item: ExecutionItemV3; active?: boolean }>(), {
   active: true,
@@ -48,7 +49,11 @@ const text = computed(() => {
     return String(payload.reason || t('ui.permission_required'))
   }
   if (props.item.kind === 'browser_handoff') return String(payload.reason || t('execution.v3.browser_handoff'))
-  if (props.item.kind === 'error') return String(payload.message || t('ui.failed'))
+  if (props.item.kind === 'error') {
+    const message = String(payload.message || '')
+    const key = failureMessageKey(message)
+    return key ? t(key) : (message || t('ui.failed'))
+  }
   return ''
 })
 const detail = computed(() => props.item.kind === 'tool' ? toolCallSummary(props.item) : '')

@@ -9,6 +9,10 @@ class DshTransportError(DshRuntimeError):
     """The Runtime Host could not be reached or returned an invalid response."""
 
 
+class DshSessionMissingError(DshTransportError):
+    """The host definitively cannot resume a persisted kernel session."""
+
+
 class DshProtocolError(DshRuntimeError):
     """The Runtime Host violated the pinned AgentKernel protocol."""
 

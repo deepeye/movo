@@ -3,12 +3,13 @@
     <div class="share-content">
       <div v-if="mode === 'owner'">
         <div class="section-label">{{ t('session.share.link_label') }}</div>
+        <p class="scope-note">{{ t('session.share.link_hint') }}</p>
         <template v-if="!share">
           <div class="link-settings">
             <n-select v-model:value="expiresInDays" :options="expiryOptions" size="small" />
             <n-button secondary size="small" :loading="creating" @click="createLink">{{ t('session.share.create') }}</n-button>
           </div>
-          <p class="hint">{{ t('session.share.link_hint') }}</p>
+          <p class="hint">{{ t('session.share.link_reissue_hint') }}</p>
         </template>
         <template v-else>
           <n-input ref="shareLinkInput" :value="shareUrl" readonly size="small">
@@ -232,6 +233,7 @@ async function removeMember(member: SessionShareMember) {
 .share-content { display: grid; gap: 20px; }
 .section-label { margin-bottom: 8px; color: #344054; font-size: 13px; font-weight: 700; }
 .hint { margin: 7px 0 0; color: #7a8699; font-size: 12px; line-height: 1.55; }
+.scope-note { margin: 0 0 12px; padding: 8px 10px; border: 1px solid #d7e5ff; border-radius: 8px; background: #f4f8ff; color: #315bb5; font-size: 12px; line-height: 1.5; }
 .link-settings { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .link-settings :deep(.n-select) { width: 150px; }
 .revoke-link { margin-top: 8px; }

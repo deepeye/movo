@@ -8,6 +8,7 @@ from typing import Any
 
 from app.dsh_runtime.profile.service import RuntimeProfilePublisher
 from app.dsh_runtime.runtime_coordinator import RuntimeCoordinator
+from app.dsh_runtime.errors import DshSessionMissingError
 
 
 logger = logging.getLogger("app.dsh_runtime.profile_sync")
@@ -42,7 +43,15 @@ class ConversationProfileSynchronizer:
         user_id: str,
         model_instance_id: str | None = None,
     ) -> ProfileSyncResult:
-        restored = await self._coordinator.restore(binding)
+        missing_session = False
+        try:
+            restored = await self._coordinator.restore(binding)
+        except DshSessionMissingError:
+            # The business conversation and messages remain durable even when
+            # the host's separate session volume was lost. A missing host
+            # session cannot seed a successor; replace only at a turn boundary.
+            restored = binding
+            missing_session = True
         previous_version = str(restored["profile_version"])
         previous_model_id = str(restored["model_instance_id"])
         desired_model_id = model_instance_id or previous_model_id
@@ -51,7 +60,7 @@ class ConversationProfileSynchronizer:
             user_id=user_id,
             model_instance_id=desired_model_id,
         )
-        if desired.profile_version == previous_version:
+        if desired.profile_version == previous_version and not missing_session:
             return ProfileSyncResult(
                 binding=restored,
                 changed=False,
@@ -62,14 +71,22 @@ class ConversationProfileSynchronizer:
             )
 
         await self._profiles.publish_snapshot(desired, actor_id=user_id, activate=False)
-        successor = await self._coordinator.rotate_binding(
-            restored,
-            profile_version=desired.profile_version,
-            model_instance_id=desired.model_instance_id,
-        )
-        disposed = await self._coordinator.dispose_restored_session(restored)
+        if missing_session:
+            successor = await self._coordinator.replace_missing_binding(
+                restored,
+                profile_version=desired.profile_version,
+                model_instance_id=desired.model_instance_id,
+            )
+            disposed = False
+        else:
+            successor = await self._coordinator.rotate_binding(
+                restored,
+                profile_version=desired.profile_version,
+                model_instance_id=desired.model_instance_id,
+            )
+            disposed = await self._coordinator.dispose_restored_session(restored)
         logger.info(
-            "conversation_profile_rotated tenant_id=%s user_id=%s conversation_id=%s old=%s new=%s old_model=%s new_model=%s predecessor_disposed=%s",
+            "conversation_profile_rotated tenant_id=%s user_id=%s conversation_id=%s old=%s new=%s old_model=%s new_model=%s predecessor_disposed=%s missing_host_session=%s",
             tenant_id,
             user_id,
             restored.get("conversation_id"),
@@ -78,6 +95,7 @@ class ConversationProfileSynchronizer:
             previous_model_id,
             desired.model_instance_id,
             disposed,
+            missing_session,
         )
         return ProfileSyncResult(
             binding=successor,

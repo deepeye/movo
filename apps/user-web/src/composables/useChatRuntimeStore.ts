@@ -430,6 +430,8 @@ async function refreshPaneLiveState(pane: ChatRuntimePane, generation: number, s
   if (detail.code_project !== undefined) pane.codeProject = detail.code_project
   pane.shared = detail.access === 'shared' || (detail.participant_count ?? 0) > 0
   pane.messages = mergeAuthoritativeMessages(pane.messages, detail.messages || []).messages
+  updateForeignRun(pane, detail.active_run, auth.userId)
+  if (!pane.foreignRun) pane.foreignRunFinished = false
   // T8: the snapshot may have materialized rows for early foreign frames;
   // apply them in stream order (event_id-deduped, rows are never created here).
   flushPendingForeignExecutions(pane)
@@ -517,7 +519,14 @@ function startPaneLiveStream(pane: ChatRuntimePane) {
     },
     onTurnStarted: () => { if (liveProgress()) refresh(false) },
     onExecution: (event) => { if (liveProgress()) consumeSessionExecution(pane, event) },
-    onTurnCompleted: () => { if (liveProgress()) refresh(false) },
+    onTurnCompleted: (event) => {
+      if (!liveProgress()) return
+      if (pane.foreignRun?.messageId === event.message_id) {
+        pane.foreignRun = null
+        pane.foreignRunFinished = true
+      }
+      refresh(false)
+    },
     onAccessLost: (paneKey, reason) => markAccessLost(paneKey, reason),
     // T8: malformed frames count diagnostics only — no UI surface.
     onMalformedFrame: () => { pane.malformedFrameCount += 1 },
@@ -1148,7 +1157,12 @@ export function useChatRuntimeStore(callbacks: RuntimeCallbacks = {}) {
   function syncActiveRuns(summaries: SessionSummary[], viewerUserId: string) {
     for (const summary of summaries) {
       const pane = findPaneBySessionId(summary.id)
-      if (pane && !pane.running) updateForeignRun(pane, summary.active_run, viewerUserId)
+      if (!pane || pane.running) continue
+      const hadForeignRun = Boolean(pane.foreignRun || pane.foreignRunFinished)
+      updateForeignRun(pane, summary.active_run, viewerUserId)
+      if (hadForeignRun && !pane.foreignRun && pane.key === state.activeKey && pane.liveAuth) {
+        void refreshPaneLiveState(pane, pane.liveGeneration, summary.id, false).catch(() => undefined)
+      }
     }
   }
 

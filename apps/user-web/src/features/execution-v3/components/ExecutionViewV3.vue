@@ -9,13 +9,13 @@ import RepeatedToolCallGroup from './RepeatedToolCallGroup.vue'
 import { hasVisibleActiveRunningLeaf, runningContainerIds } from '../domain/activityPresentation'
 import { collapseRepeatedToolCalls } from '../domain/repeatedToolCalls'
 import { elapsedRunMs, formatRunDuration } from '../domain/runTiming'
+import { failureMessageKey } from '../domain/failureMessage'
 
 const props = defineProps<{ store: ExecutionStoreV3; live?: boolean }>()
 const emit = defineEmits<{
   (event: 'resolve-permission', requestId: string, decision: 'allow' | 'deny' | 'always_allow'): void
 }>()
 const collapsed = ref(false)
-const userOverrode = ref(false)
 const { locale } = useLocale()
 const clock = ref(Date.now())
 let clockHandle: ReturnType<typeof setInterval> | null = null
@@ -48,9 +48,8 @@ const terminalDetail = computed(() => {
   const failedEvent = [...props.store.state.rawEvents].reverse().find(event => event.type === 'run.failed')
   const message = String(failedEvent?.payload?.message || '').trim()
   if (!message) return ''
-  return /fetch failed|failed to fetch/i.test(message)
-    ? t('execution.v3.failed_network')
-    : message
+  const key = failureMessageKey(message)
+  return key ? t(key) : message
 })
 const activityCount = computed(() => rows.value.filter(
   (item) => !['commentary', 'final_answer'].includes(item.kind),
@@ -67,8 +66,8 @@ const toggleText = computed(() => {
 })
 
 watch(() => props.store.state.finalAnswerComplete, (done) => {
-  if (done && !userOverrode.value) collapsed.value = true
-}, { immediate: true })
+  if (done) collapsed.value = true
+}, { immediate: true, flush: 'sync' })
 
 watch(
   () => Boolean(props.live) && props.store.state.runStatus === 'running' && props.store.state.runStartedAt !== null,
@@ -87,7 +86,6 @@ onBeforeUnmount(() => {
 
 function toggle() {
   collapsed.value = !collapsed.value
-  userOverrode.value = true
 }
 </script>
 

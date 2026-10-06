@@ -535,6 +535,7 @@ interface SessionApi {
   adapter: (config: { url?: string }) => Promise<unknown>
   gets: string[]
   cursorBySession: Map<string, string>
+  detailBySession: Map<string, Record<string, unknown>>
   holdNextGet: (sessionId: string) => void
   releaseGet: () => void
   /** T8: when set, GETs past this count throw (the session reads as
@@ -545,12 +546,14 @@ interface SessionApi {
 function createSessionApi(): SessionApi {
   const gets: string[] = []
   const cursorBySession = new Map<string, string>()
+  const detailBySession = new Map<string, Record<string, unknown>>()
   let held: { sessionId: string; wait: Promise<void> } | null = null
   let releaseHeld: (() => void) | null = null
   const api: SessionApi = {
     adapter: undefined as unknown as SessionApi['adapter'],
     gets,
     cursorBySession,
+    detailBySession,
     holdNextGet(sessionId: string) {
       let release: () => void = () => undefined
       const wait = new Promise<void>((settle) => { release = settle })
@@ -580,6 +583,7 @@ function createSessionApi(): SessionApi {
           owner_user_id: 'owner-1',
           participant_count: 2,
           live_cursor: cursorBySession.get(sessionId),
+          ...detailBySession.get(sessionId),
         },
       },
       status: 200,
@@ -663,6 +667,72 @@ test('T7 store: one stream per viewed pane, one snapshot refresh per invalidatio
   runtime.removeSession('sess-a')
   runtime.removeSession('sess-b')
   runtime.reset()
+})
+
+test('shared turn completion clears the refresh notice after the authoritative messages arrive', async () => {
+  const live = liveHub()
+  ;(globalThis as { fetch?: typeof fetch }).fetch = live.impl
+  const api = createSessionApi()
+  const activeRun = { message_id: 'foreign-msg', initiator_user_id: 'member-b', status: 'running' }
+  api.detailBySession.set('sess-shared', { active_run: activeRun })
+  const runtime = await loadStore(api)
+  runtime.reset()
+  try {
+    const pane = await runtime.selectSession('sess-shared', 'member-a', 'main-1', 'token-1')
+    await until(() => live.calls.length === 1, 'shared pane stream')
+    assert.equal(pane.foreignRun?.messageId, 'foreign-msg')
+    api.detailBySession.set('sess-shared', {
+      active_run: null,
+      messages: [
+        { _id: 'user-msg', role: 'user', content: 'hello', user_id: 'member-b' },
+        { _id: 'answer-msg', role: 'assistant', content: 'done', message_id: 'foreign-msg' },
+      ],
+    })
+    live.calls[0].push(frame('turn.completed', {
+      session_id: 'sess-shared', message_id: 'foreign-msg', run_id: 'run-1', status: 'completed', revision: 'rev-2',
+    }, 'cursor-done'))
+    await until(() => pane.messages.length === 2, 'completed foreign messages')
+    assert.equal(pane.foreignRun, null)
+    assert.equal(pane.foreignRunFinished, false, 'no manual refresh notice after live sync')
+    assert.deepEqual(api.gets, ['sess-shared', 'sess-shared'])
+  } finally {
+    runtime.removeSession('sess-shared')
+    runtime.reset()
+  }
+})
+
+test('failed live refresh keeps a fallback, then summary polling retries automatically', async () => {
+  const live = liveHub()
+  ;(globalThis as { fetch?: typeof fetch }).fetch = live.impl
+  const api = createSessionApi()
+  api.detailBySession.set('sess-fallback', {
+    active_run: { message_id: 'foreign-msg', initiator_user_id: 'member-b', status: 'running' },
+  })
+  const runtime = await loadStore(api)
+  runtime.reset()
+  try {
+    const pane = await runtime.selectSession('sess-fallback', 'member-a', 'main-1', 'token-1')
+    await until(() => live.calls.length === 1, 'fallback pane stream')
+    api.failAfterGets = 1
+    live.calls[0].push(frame('turn.completed', {
+      session_id: 'sess-fallback', message_id: 'foreign-msg', run_id: 'run-1', status: 'completed', revision: 'rev-2',
+    }, 'cursor-done'))
+    await until(() => api.gets.length === 2, 'failed authoritative refresh')
+    assert.equal(pane.foreignRun, null)
+    assert.equal(pane.foreignRunFinished, true, 'manual refresh remains available after GET failure')
+
+    api.failAfterGets = null
+    api.detailBySession.set('sess-fallback', {
+      active_run: null,
+      messages: [{ _id: 'answer-msg', role: 'assistant', content: 'done', message_id: 'foreign-msg' }],
+    })
+    runtime.syncActiveRuns([{ id: 'sess-fallback', active_run: null } as any], 'member-a')
+    await until(() => pane.messages.length === 1, 'summary-triggered retry')
+    assert.equal(pane.foreignRunFinished, false)
+  } finally {
+    runtime.removeSession('sess-fallback')
+    runtime.reset()
+  }
 })
 
 test('T7 store: access-loss latch closes once; a refresh aborted by pane removal mutates nothing', async () => {

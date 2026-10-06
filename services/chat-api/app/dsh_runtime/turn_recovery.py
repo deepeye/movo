@@ -6,7 +6,7 @@ from typing import Any
 
 from app.dsh_runtime.bindings import KernelBindingRepository
 from app.dsh_runtime.conversation import ConversationRepository
-from app.dsh_runtime.errors import DshNotFoundError
+from app.dsh_runtime.errors import DshNotFoundError, DshSessionMissingError
 from app.dsh_runtime.event_mapper import DshEventMapper
 from app.dsh_runtime.events import KernelEventRepository, KernelEventWrite
 from app.dsh_runtime.events.persistence_retry import retry_persistence
@@ -171,6 +171,13 @@ class TurnTerminalRecovery:
         message_id = str((binding.get("active_turn") or {}).get("message_id") or "")
         try:
             binding = await self._coordinator.restore(binding)
+        except DshSessionMissingError:
+            if not message_id:
+                return False
+            try:
+                return await self._finalize_orphaned_claim(binding, message_id)
+            except Exception:
+                return False
         except Exception:
             # Process-local miss or transport/timeout: retry next sweep pass,
             # never finalize on an unproven session.
@@ -241,7 +248,12 @@ class TurnTerminalRecovery:
         if not message_id:
             return binding
         try:
-            await self.finalize_persisted_terminal(binding=binding, message_id=message_id)
+            finalized = await self.finalize_persisted_terminal(binding=binding, message_id=message_id)
+            if not finalized:
+                try:
+                    await self._coordinator.restore(binding)
+                except DshSessionMissingError:
+                    await self._finalize_orphaned_claim(binding, message_id)
             current = await self._bindings.current(
                 str(binding["conversation_id"]),
                 tenant_id=str(binding["tenant_id"]),

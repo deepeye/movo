@@ -6,6 +6,7 @@ from copy import deepcopy
 from app.dsh_runtime.profile.compiler import ModelProfileCompiler
 from app.dsh_runtime.profile.models import RuntimeProfileSnapshot
 from app.dsh_runtime.profile.synchronizer import ConversationProfileSynchronizer
+from app.dsh_runtime.errors import DshSessionMissingError, DshTransportError
 from app.dsh_runtime.profile.tools import ToolProfileCompiler
 from app.dsh_runtime.profile import tools as tools_module
 from app.dsh_runtime.profile.skills import SkillProfileCompiler
@@ -110,6 +111,81 @@ def test_changed_profile_rotates_same_conversation_and_disposes_predecessor() ->
         assert profiles.published == ["rp-new"]
         assert coordinator.rotations == [("rp-new", "model-a")]
         assert coordinator.disposed == ["session-old"]
+
+    asyncio.run(run())
+
+
+def test_missing_host_session_replaces_binding_without_seed() -> None:
+    class MissingCoordinator(_Coordinator):
+        def __init__(self) -> None:
+            super().__init__()
+            self.replacements: list[tuple[str, str]] = []
+
+        async def restore(self, binding):
+            raise DshSessionMissingError('session "dsh-lost" not found')
+
+        async def replace_missing_binding(self, binding, *, profile_version, model_instance_id):
+            self.replacements.append((profile_version, model_instance_id))
+            return {**binding, "binding_id": "binding-new", "kernel_session_id": "session-new"}
+
+    async def run() -> None:
+        profiles = _Profiles(_profile("rp-old"))
+        coordinator = MissingCoordinator()
+        result = await ConversationProfileSynchronizer(profiles, coordinator).synchronize(
+            _binding(), tenant_id="tenant-a", user_id="user-a",
+        )
+        assert result.binding["kernel_session_id"] == "session-new"
+        assert coordinator.replacements == [("rp-old", "model-a")]
+        assert coordinator.rotations == []
+        assert coordinator.disposed == []
+
+    asyncio.run(run())
+
+
+def test_unavailable_host_does_not_replace_binding() -> None:
+    class UnavailableCoordinator(_Coordinator):
+        async def restore(self, binding):
+            raise DshTransportError("DSH Runtime Host is unavailable")
+
+    async def run() -> None:
+        coordinator = UnavailableCoordinator()
+        try:
+            await ConversationProfileSynchronizer(_Profiles(_profile("rp-old")), coordinator).synchronize(
+                _binding(), tenant_id="tenant-a", user_id="user-a",
+            )
+        except DshTransportError:
+            pass
+        else:
+            assert False, "host outage must not reset conversation context"
+        assert coordinator.rotations == []
+
+    asyncio.run(run())
+
+
+def test_missing_binding_replacement_does_not_seed_from_lost_session() -> None:
+    from app.dsh_runtime.runtime_coordinator import RuntimeCoordinator
+
+    class RecordingCoordinator(RuntimeCoordinator):
+        def __init__(self) -> None:
+            self.calls = []
+
+        async def create_binding(self, **kwargs):
+            self.calls.append(kwargs)
+            return kwargs
+
+    async def run() -> None:
+        coordinator = RecordingCoordinator()
+        await coordinator.replace_missing_binding(
+            {**_binding(), "speaker_user_id": "user-b", "speaker_preset_id": "askai-enterprise"},
+            profile_version="rp-new",
+            model_instance_id="model-b",
+        )
+        call = coordinator.calls[0]
+        assert call["replaces_binding_id"] == "binding-old"
+        assert call["conversation_id"] == "conversation-a"
+        assert call["user_id"] == "user-b"
+        assert call["seed_runtime_id"] is None
+        assert call["seed_session_id"] is None
 
     asyncio.run(run())
 
