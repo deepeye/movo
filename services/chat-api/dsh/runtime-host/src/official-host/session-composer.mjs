@@ -21,7 +21,7 @@ export function enterpriseToolNames(modelProfile) {
   const skills = modelProfile?.skillProfile?.skills ?? []
   const skillTools = []
   if (skills.length > 0) skillTools.push('skill')
-  if (skills.some(skill => Boolean(skill.bundle_archive_base64))) skillTools.push(SKILL_RESOURCE_READ_TOOL)
+  if (skills.some(skill => Boolean(skill.bundle_archive_base64 || skill.bundle_archive_id))) skillTools.push(SKILL_RESOURCE_READ_TOOL)
   if (profile === undefined) return skillTools
   const replaced = new Set(profile.nativeReplacements ?? [])
   const names = profile.tools

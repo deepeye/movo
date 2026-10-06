@@ -7,11 +7,11 @@ export class AskaiSkillProvider {
   #skills
   #byName
 
-  constructor(skillProfile, { storageRoot } = {}) {
+  constructor(skillProfile, { storageRoot, bundleGatewayUrl = '' } = {}) {
     this.name = PROVIDER_NAME
     this.#skills = Object.freeze([...(skillProfile?.skills ?? [])].map(skill => Object.freeze(structuredClone(skill))))
     this.#byName = new Map(this.#skills.map(skill => [skill.name, skill]))
-    this.materializer = storageRoot === undefined ? undefined : new SkillBundleMaterializer(storageRoot)
+    this.materializer = storageRoot === undefined ? undefined : new SkillBundleMaterializer(storageRoot, { bundleGatewayUrl })
   }
 
   async list() {
@@ -39,7 +39,7 @@ export class AskaiSkillProvider {
   async get(candidate) {
     const skill = this.#byName.get(candidate?.locator?.name)
     if (skill === undefined || candidate?.locator?.version !== skill.version) return undefined
-    const hasBundle = Boolean(skill.bundle_archive_base64)
+    const hasBundle = Boolean(skill.bundle_archive_base64 || skill.bundle_archive_id)
     return {
       name: skill.name,
       description: skill.description,
@@ -62,13 +62,13 @@ export class AskaiSkillProvider {
   }
 
   hasResourceBundles() {
-    return this.#skills.some(skill => Boolean(skill.bundle_archive_base64))
+    return this.#skills.some(skill => Boolean(skill.bundle_archive_base64 || skill.bundle_archive_id))
   }
 
   async readTextResource(skillName, options) {
     const skill = this.#byName.get(skillName)
     if (skill === undefined) throw new Error(`Unknown Skill: ${skillName}`)
-    if (!skill.bundle_archive_base64) throw new Error(`Skill has no package resources: ${skillName}`)
+    if (!skill.bundle_archive_base64 && !skill.bundle_archive_id) throw new Error(`Skill has no package resources: ${skillName}`)
     if (this.materializer === undefined) throw new Error('Skill package storage is unavailable')
     const root = await this.materializer.materialize(skill)
     const resource = await readSkillTextResource(root, options.path, options)

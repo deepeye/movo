@@ -76,7 +76,10 @@ export class KernelRuntime {
     this.#temporalContext.install(ctx)
     this.#turnContext.install(ctx)
     const skillProviderRegistration = registerAskaiSkillProvider(
-      ctx, this.modelProfile?.skillProfile, { storageRoot: this.storageRoot },
+      ctx, this.modelProfile?.skillProfile, {
+        storageRoot: this.storageRoot,
+        bundleGatewayUrl: this.modelProfile?.bundleGatewayUrl,
+      },
     )
     this.#skillProviderDispose = skillProviderRegistration?.dispose
     this.#skillResourceToolDispose = skillProviderRegistration === undefined

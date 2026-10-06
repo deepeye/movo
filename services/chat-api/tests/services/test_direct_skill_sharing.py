@@ -5,6 +5,8 @@ import re
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures('skill_gridfs')
+
 from app.services.skill_packages import installer as installer_module
 from app.services.skill_sharing import direct_service as direct_module
 from app.services.skill_sharing import distribution as distribution_module

@@ -35,6 +35,7 @@ from app.dsh_runtime.turn_runner import DshTurnRunner
 from app.dsh_runtime.turn_finalization import TurnStateFinalizer
 from app.dsh_runtime.turn_recovery import TurnTerminalRecovery
 from app.enterprise_capabilities.evidence import ExecutionEvidenceRepository
+from app.governance.topic_admission import require_topic
 from app.dsh_runtime.events.authoritative_delivery import DeliveryStore
 
 
@@ -122,6 +123,7 @@ class DshChatService:
         selected_writing_skill_id: str | None = None,
         selected_skill_id: str | None = None,
     ) -> PreparedTurn:
+        await require_topic(main_id=tenant_id, user_id=user_id, text=text)
         temporal_context = build_temporal_context(timezone_name)
         locale = resolve_turn_locale(text, explicit=language_name)
         turn_context = {

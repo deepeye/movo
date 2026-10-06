@@ -58,6 +58,7 @@ class DshRuntimeApplication:
             gateway_url=settings.DSH_MODEL_GATEWAY_URL,
             tool_token_service=ToolGatewayTokenService(secret),
             tool_gateway_url=settings.DSH_TOOL_GATEWAY_URL,
+            bundle_gateway_url=settings.DSH_TOOL_GATEWAY_URL.removesuffix("/tools") + "/skill-bundles",
         )
         self._transport = HttpKernelHostTransport(
             settings.DSH_RUNTIME_HOST_URL,

@@ -3,7 +3,7 @@
     <div class="zip-dropzone" :class="{ dragging }" @dragenter.prevent="dragging = true" @dragover.prevent @dragleave.prevent="dragging = false" @drop.prevent="onDrop" @click="input?.click()">
       <input ref="input" hidden type="file" accept=".zip,application/zip" @change="onChoose" />
       <strong>{{ file?.name || t('拖拽 ZIP 到这里，或点击选择文件') }}</strong>
-      <span>{{ t('安装后默认禁用，管理员配置岗位权限后再启用；ZIP 最大 5 MiB') }}</span>
+      <span>{{ t('skills.install_limit') }}</span>
     </div>
     <n-alert v-if="result" class="install-result" type="success" :title="result.duplicate ? t('该版本已安装') : t('企业 Skill 安装成功')">
       {{ result.name }} · {{ result.version }} · {{ t('skills.install_file_count', { count: result.fileCount }) }}

@@ -23,6 +23,7 @@ class DshSkillDefinition(BaseModel):
     bundle_digest: str = Field(default="", max_length=64)
     bundle_root: str = Field(default="", max_length=512)
     bundle_archive_base64: str = ""
+    bundle_archive_id: str = ""
     model_invocable: bool = True
     user_invocable: bool = True
 

@@ -137,6 +137,27 @@ def test_imported_bundle_digest_versions_the_native_dsh_skill():
     assert first.version != changed.version
 
 
+def test_large_bundle_reference_preserves_skill_identity_and_invocation():
+    base = {
+        "id": "personal-package", "name": "Search Package", "description": "Search",
+        "skill_type": "ordinary", "skill_markdown": "Use the bundled reference.",
+        "package_slug": "multi-search-engine", "package_digest": "a" * 64,
+        "runtime_bundle_root": "search/", "model_invocable": True, "user_invocable": True,
+    }
+    legacy = asyncio.run(SkillProfileCompiler(FakeSkillCatalog([{
+        **base, "runtime_bundle_base64": "YWJj",
+    }])).compile(tenant_id="tenant-a", user_id="user-a", tools=())).skills[0]
+    referenced = asyncio.run(SkillProfileCompiler(FakeSkillCatalog([{
+        **base, "runtime_bundle_archive_id": "b" * 32,
+    }])).compile(tenant_id="tenant-a", user_id="user-a", tools=())).skills[0]
+    assert legacy.name == referenced.name
+    assert legacy.content == referenced.content
+    assert legacy.model_invocable == referenced.model_invocable
+    assert legacy.user_invocable == referenced.user_invocable
+    assert referenced.bundle_archive_id == "b" * 32
+    assert referenced.bundle_archive_base64 == ""
+
+
 def test_expert_package_is_one_dsh_skill_with_internal_children_only_in_content():
     row = {
         "id": "expert-package-1",

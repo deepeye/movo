@@ -133,6 +133,7 @@ class SkillProfileCompiler:
             bundle_digest=str(row.get("package_digest") or ""),
             bundle_root=str(row.get("runtime_bundle_root") or ""),
             bundle_archive_base64=str(row.get("runtime_bundle_base64") or ""),
+            bundle_archive_id=str(row.get("runtime_bundle_archive_id") or ""),
             model_invocable=bool(row.get("model_invocable", True)),
             user_invocable=bool(row.get("user_invocable", True)),
         )

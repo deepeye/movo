@@ -17,7 +17,9 @@ class RuntimeProfileBundle:
     @staticmethod
     def load(payload: bytes | str) -> RuntimeProfileSnapshot:
         snapshot = RuntimeProfileSnapshot.model_validate_json(payload)
-        document = snapshot.model_dump(mode="json")
+        # Hash the original wire shape: older profiles did not contain fields
+        # introduced by newer optional Skill bundle transports.
+        document = json.loads(payload)
         claimed_hash = document.pop("content_hash")
         document.pop("profile_version")
         actual_hash = ModelProfileCompiler.content_hash(document)

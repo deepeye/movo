@@ -70,3 +70,22 @@ def test_package_resources_are_attached_to_the_runtime_catalog(monkeypatch):
     rows = asyncio.run(catalog_module.MongoSkillCatalog().list_enabled("tenant-a", "user-a"))
     assert rows[0]["runtime_bundle_base64"] == "YXJjaGl2ZQ=="
     assert rows[0]["runtime_bundle_root"] == "foshan/"
+
+
+def test_gridfs_package_is_referenced_without_embedding_archive(monkeypatch):
+    class GridPackageCollection:
+        def find(self, query):
+            return AsyncCursor([{
+                "_id": "package-1", "archive_gridfs_id": "a" * 32, "root_prefix": "foshan/",
+                "files": [{"path": "references/info.txt", "size": 21 * 1024 * 1024}],
+            }])
+
+    class GridDatabase:
+        skill_packages = GridPackageCollection()
+
+    monkeypatch.setattr(catalog_module, "user_skill_service", PackagePersonalService())
+    monkeypatch.setattr(catalog_module, "organization_skill_adapter", EmptyOrganizationService())
+    monkeypatch.setattr(catalog_module, "get_db", lambda: GridDatabase())
+    rows = asyncio.run(catalog_module.MongoSkillCatalog().list_enabled("tenant-a", "user-a"))
+    assert rows[0]["runtime_bundle_archive_id"] == "a" * 32
+    assert not rows[0]["runtime_bundle_base64"]

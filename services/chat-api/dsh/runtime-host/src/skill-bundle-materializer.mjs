@@ -2,9 +2,10 @@ import { createHash } from 'node:crypto'
 import { mkdir, mkdtemp, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, normalize, resolve, sep } from 'node:path'
 import { unzipSync } from 'fflate'
+import { fetchSkillBundle } from './skill-bundle-fetcher.mjs'
 
 const MAX_FILES = 256
-const MAX_EXPANDED_BYTES = 20 * 1024 * 1024
+const MAX_EXPANDED_BYTES = 200 * 1024 * 1024
 
 function safeRelativePath(value) {
   const raw = String(value ?? '').replaceAll('\\', '/')
@@ -25,21 +26,28 @@ async function exists(path) {
 }
 
 export class SkillBundleMaterializer {
-  constructor(storageRoot) {
+  constructor(storageRoot, { bundleGatewayUrl = '', fetchBundle = fetchSkillBundle } = {}) {
     this.root = resolve(storageRoot, 'imported-skills')
+    this.bundleGatewayUrl = bundleGatewayUrl
+    this.fetchBundle = fetchBundle
   }
 
   async materialize(skill) {
     const encoded = String(skill?.bundle_archive_base64 ?? '')
-    if (!encoded) return undefined
+    const archiveId = String(skill?.bundle_archive_id ?? '')
+    if (!encoded && !archiveId) return undefined
     const digest = String(skill?.bundle_digest ?? '')
-    const archive = Buffer.from(encoded, 'base64')
-    if (!/^[0-9a-f]{64}$/.test(digest) || createHash('sha256').update(archive).digest('hex') !== digest) {
-      throw new Error(`Skill bundle digest mismatch: ${skill?.name ?? 'unknown'}`)
-    }
+    if (!/^[0-9a-f]{64}$/.test(digest)) throw new Error(`Invalid Skill bundle digest: ${skill?.name ?? 'unknown'}`)
     const destination = resolve(this.root, digest)
     const rootPrefix = safeRelativePath(String(skill?.bundle_root || '.'))
     const resourceRoot = resolve(destination, rootPrefix)
+    if (archiveId && await exists(destination)) return resourceRoot
+    const archive = archiveId
+      ? await this.fetchBundle(skill, this.bundleGatewayUrl)
+      : Buffer.from(encoded, 'base64')
+    if (createHash('sha256').update(archive).digest('hex') !== digest) {
+      throw new Error(`Skill bundle digest mismatch: ${skill?.name ?? 'unknown'}`)
+    }
     if (await exists(destination)) return resourceRoot
 
     const entries = Object.entries(unzipSync(new Uint8Array(archive)))

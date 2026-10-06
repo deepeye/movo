@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Any
 
 from bson import ObjectId
-from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
 from app.migrations.sequence_index import (
@@ -18,6 +17,7 @@ from app.migrations.sequence_index import (
     MESSAGE_SEQ_INDEX_KEYS,
     UNIQUE_MESSAGE_SEQ_INDEX_NAME,
 )
+from .sequence_allocator import reserve_message_sequence
 
 
 class MessageSequenceIndexConflict(RuntimeError):
@@ -242,33 +242,18 @@ class ConversationRepository:
             return existing
         session_oid = ObjectId(conversation_id)
         # Session-scoped lookup: {_id, main_id} only, so a participant may
-        # append. The caller layer admits members; user_id stays the message's
-        # author. The counter is seeded [review-3] in the SAME atomic update:
-        # the server rejects $inc and $max on the same field in one operator
-        # update (ConflictingUpdateOperators, code 40), so the raise is a $set
-        # whose $max expression floors the incremented counter at maxSeq + 1 -
-        # a legacy writer that advanced seq without advancing next_message_seq
-        # cannot cause a collision on the next DSH turn.
+        # append. The caller layer admits members; user_id stays the author.
+        # The allocator floors the counter against legacy message rows before
+        # reserving the next sequence number.
         max_seq_row = await self._messages.find_one(
             {"main_id": tenant_id, "session_id": session_oid},
             sort=[("seq", -1)],
         )
         max_seq = int((max_seq_row or {}).get("seq") or 0)
-        session = await self._sessions.find_one_and_update(
+        session = await reserve_message_sequence(
+            self._sessions,
             {"_id": session_oid, "main_id": tenant_id},
-            [
-                {
-                    "$set": {
-                        "next_message_seq": {
-                            "$max": [
-                                {"$add": [{"$ifNull": ["$next_message_seq", 0]}, 1]},
-                                max_seq + 1,
-                            ]
-                        }
-                    }
-                }
-            ],
-            return_document=ReturnDocument.AFTER,
+            max_seq,
         )
         if session is None:
             raise LookupError("conversation_not_found")

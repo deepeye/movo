@@ -23,6 +23,16 @@ export interface ResourceAccessUiExtension {
   validate?: (value: unknown) => string | null
 }
 
+export interface TopicRuleAudienceUiExtension {
+  component: Component
+  createValue: () => unknown
+  load: (ruleId: string) => Promise<unknown>
+  save: (ruleId: string, value: unknown) => Promise<void>
+  validate?: (value: unknown) => string | null
+  loadSummaries?: (ruleIds: string[]) => Promise<Record<string, unknown>>
+  summarize?: (value: unknown) => { key: string; count?: number }
+}
+
 export interface AdminProductUiExtension {
   extensionId: string
   productEditionLabel?: string
@@ -32,6 +42,8 @@ export interface AdminProductUiExtension {
   knowledgeDirectoryPermissions?: Component
   knowledgeDocumentPermissions?: Component
   shortcutSettingsExtension?: Component
+  topicRuleAudience?: TopicRuleAudienceUiExtension
+  topicRuleAudienceBadge?: Component
   modelAccess?: ModelAccessUiExtension
   skillAccess?: ResourceAccessUiExtension
   toolAccess?: ResourceAccessUiExtension

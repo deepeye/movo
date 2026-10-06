@@ -43,6 +43,7 @@ class RuntimeProfileSnapshot(BaseModel):
         access_token: str,
         tool_gateway_url: str = "",
         tool_access_token: str = "",
+        bundle_gateway_url: str = "",
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             "profileVersion": self.profile_version,
@@ -69,4 +70,8 @@ class RuntimeProfileSnapshot(BaseModel):
                 "skills": [skill.model_dump(mode="json") for skill in self.skills],
                 "writingStyles": [style.model_dump(mode="json") for style in self.writing_styles],
             }
+        if any(skill.bundle_archive_id for skill in self.skills):
+            if not bundle_gateway_url:
+                raise ValueError("GridFS Skill Profile has no bundle gateway")
+            payload["bundleGatewayUrl"] = bundle_gateway_url
         return payload

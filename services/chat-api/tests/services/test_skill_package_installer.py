@@ -5,10 +5,14 @@ import io
 import zipfile
 from dataclasses import replace
 
+import pytest
+
 from app.services.skill_packages import SkillPackageInstaller, validate_skill_zip
 from app.services.skill_packages import installer as installer_module
 from app.services.skill_packages import upgrade as upgrade_module
 from app.services.skill_packages.upgrade import SkillPackageUpgradeInspector
+
+pytestmark = pytest.mark.usefixtures('skill_gridfs')
 
 
 class Result:

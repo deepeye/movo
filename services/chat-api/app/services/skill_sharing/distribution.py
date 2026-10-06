@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import datetime
 import json
 import uuid
@@ -8,6 +7,7 @@ from typing import Any
 
 from app.core.db import get_db
 from app.core.tenant import resolve_main_id
+from app.services.skill_packages.archive_store import archive_fields, delete_archive
 
 from .exporter import ShareSnapshot, SkillShareExporter
 
@@ -72,13 +72,17 @@ class SkillDistributionService:
             "source_skill_id": str(distribution["source_skill_id"]),
             "version": str(version or snapshot.package.version or "1.0.0"),
             "release_notes": str(release_notes or "").strip()[:2000],
-            "archive_base64": base64.b64encode(snapshot.package.archive_bytes).decode("ascii"),
+            **await archive_fields(db, snapshot.package.archive_bytes, main_id=str(distribution["main_id"]), digest=snapshot.package.archive_digest),
             "package": snapshot.package.package_summary(),
             "profile": snapshot.profile,
             "status": "active",
             "created_at": _utcnow(),
         }
-        await db[DISTRIBUTION_RELEASE_COLLECTION].insert_one(row)
+        try:
+            await db[DISTRIBUTION_RELEASE_COLLECTION].insert_one(row)
+        except Exception:
+            await delete_archive(db, row)
+            raise
         await db[DISTRIBUTION_COLLECTION].update_one(
             {"_id": distribution["_id"], "main_id": distribution["main_id"]},
             {"$set": {"latest_release_id": row["_id"], "latest_version": row["version"], "updated_at": _utcnow()}},

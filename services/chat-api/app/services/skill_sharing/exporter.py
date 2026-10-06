@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import hashlib
 import io
 import json
@@ -10,8 +9,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import yaml
+from gridfs.errors import NoFile
 
 from app.services.skill_packages import SkillPackageError, ValidatedSkillPackage, validate_skill_package
+from app.services.skill_packages.archive_store import read_archive
 
 
 @dataclass(frozen=True)
@@ -41,8 +42,8 @@ class SkillShareExporter:
             if package_row is None:
                 raise SkillPackageError("share_package_missing", "The Skill package archive is unavailable")
             try:
-                archive = base64.b64decode(str(package_row.get("archive_base64") or ""), validate=True)
-            except (ValueError, TypeError) as exc:
+                archive = await read_archive(db, package_row)
+            except (ValueError, TypeError, OSError, NoFile) as exc:
                 raise SkillPackageError("share_package_invalid", "The Skill package archive is invalid") from exc
             package = validate_skill_package(archive)
         else:

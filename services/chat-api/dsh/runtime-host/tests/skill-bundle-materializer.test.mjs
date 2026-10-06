@@ -7,6 +7,7 @@ import test from 'node:test'
 import { zipSync, strToU8 } from 'fflate'
 
 import { SkillBundleMaterializer } from '../src/skill-bundle-materializer.mjs'
+import { fetchSkillBundle } from '../src/skill-bundle-fetcher.mjs'
 
 test('materializes an immutable nested Skill bundle for DSH directory resources', async () => {
   const root = await mkdtemp(join(tmpdir(), 'movo-skill-bundle-'))
@@ -38,4 +39,37 @@ test('rejects a bundle whose immutable digest does not match', async () => {
   } finally {
     await rm(root, { recursive: true, force: true })
   }
+})
+
+test('referenced bundle is fetched once and then reused from the digest cache', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'movo-referenced-skill-'))
+  const archive = Buffer.from(zipSync({
+    'sample/SKILL.md': strToU8('---\nname: sample\ndescription: Sample\n---\nBody'),
+    'sample/references/a.txt': strToU8('cached resource'),
+  }))
+  const digest = createHash('sha256').update(archive).digest('hex')
+  const skill = { bundle_archive_id: 'a'.repeat(32), bundle_digest: digest, bundle_root: 'sample/' }
+  let downloads = 0
+  const materializer = new SkillBundleMaterializer(root, {
+    bundleGatewayUrl: 'http://localhost/bundles',
+    fetchBundle: async () => { downloads += 1; return archive },
+  })
+  try {
+    const first = await materializer.materialize(skill)
+    const second = await materializer.materialize(skill)
+    assert.equal(first, second)
+    assert.equal(downloads, 1)
+    assert.equal(await readFile(join(first, 'references/a.txt'), 'utf8'), 'cached resource')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('remote bundle fetch rejects a digest mismatch', async () => {
+  const archive = Buffer.from('untrusted archive')
+  await assert.rejects(fetchSkillBundle({
+    bundle_archive_id: 'a'.repeat(32), bundle_digest: '0'.repeat(64),
+  }, 'http://localhost/bundles', {
+    fetchImpl: async () => new Response(archive, { status: 200 }),
+  }), /digest mismatch/)
 })

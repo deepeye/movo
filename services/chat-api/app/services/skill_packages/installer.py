@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import datetime
 import uuid
 from typing import Any, Literal
@@ -11,6 +10,7 @@ from app.core.db import get_db
 from app.core.tenant import resolve_main_id
 
 from .validator import ValidatedSkillPackage
+from .archive_store import archive_fields, delete_archive
 
 
 InstallScope = Literal["personal", "organization"]
@@ -66,14 +66,18 @@ class SkillPackageInstaller:
             "version": package.version,
             "digest": package.archive_digest,
             "root_prefix": package.root_prefix,
-            "archive_base64": base64.b64encode(package.archive_bytes).decode("ascii"),
+            **await archive_fields(db, package.archive_bytes, main_id=tenant_id, digest=package.archive_digest),
             "files": [dict(item) for item in package.files],
             "kind": package.package_kind,
             "children": [dict(item) for item in package.children],
             "source": dict(package_source or {}),
             "created_at": now,
         }
-        await db.skill_packages.insert_one(package_doc)
+        try:
+            await db.skill_packages.insert_one(package_doc)
+        except Exception:
+            await delete_archive(db, package_doc)
+            raise
 
         common = {
             "name": package.display_name,
@@ -112,6 +116,7 @@ class SkillPackageInstaller:
                 await collection.update_one({"_id": current["_id"], **owner_query}, {"$set": common})
             except Exception:
                 await db.skill_packages.delete_one({"_id": package_id})
+                await delete_archive(db, package_doc)
                 raise
             expired = [item for item in previous if item not in retained]
             if expired:
@@ -153,6 +158,7 @@ class SkillPackageInstaller:
             await collection.insert_one(record)
         except DuplicateKeyError:
             await db.skill_packages.delete_one({"_id": package_id})
+            await delete_archive(db, package_doc)
             winner = await collection.find_one(owner_query)
             if winner and str(winner.get("package_digest") or "") == package.archive_digest:
                 return self._result(

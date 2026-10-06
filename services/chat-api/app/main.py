@@ -107,6 +107,7 @@ async def request_logging_middleware(request, call_next):
 from app.api.endpoints import (
     auth,
     dsh_chat,
+    dsh_skill_bundles,
     debug,
     documents,
     dsh_model_gateway,
@@ -165,6 +166,7 @@ app.include_router(shortcuts.router, prefix="/api")
 app.include_router(browser_ws_endpoint.router, prefix="/api")
 app.include_router(dsh_model_gateway.router)
 app.include_router(dsh_tool_gateway.internal_router)
+app.include_router(dsh_skill_bundles.router)
 app.include_router(dsh_tool_gateway.public_router, prefix="/api")
 
 from app.product.extensions import get_product_extension
