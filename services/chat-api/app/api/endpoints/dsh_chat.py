@@ -42,7 +42,7 @@ from app.dsh_runtime.desktop_binding import DesktopSessionIdentity
 from app.dsh_runtime.turn_admission import admit_skill_selection
 from app.governance.position_policy import MongoEmployeePolicyResolver
 from app.governance.audit import record_position_policy_event
-from app.governance.topic_admission import TopicAdmissionDenied, require_topic
+from app.governance.topic_admission import TopicAdmissionDenied
 
 
 router = APIRouter(tags=["dsh-chat"])
@@ -417,7 +417,9 @@ async def desktop_turn_start(
     tenant_id, user_id, _ = await _identity(authorization)
     await _require_code_capability(tenant_id, user_id)
     try:
-        await require_topic(main_id=tenant_id, user_id=user_id, text=payload.text)
+        await dsh_runtime_application.require_topic_admission().require(
+            main_id=tenant_id, user_id=user_id, text=payload.text,
+        )
     except TopicAdmissionDenied as exc:
         raise HTTPException(status_code=403, detail={"code": "topic_admission_denied", "message": str(exc)}) from exc
     try:

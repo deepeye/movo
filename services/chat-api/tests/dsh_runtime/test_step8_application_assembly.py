@@ -8,6 +8,7 @@ from bson import ObjectId
 
 from app.dsh_runtime import chat_service as chat_service_module
 from app.dsh_runtime.chat_service import DshChatService, PreparedTurn
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.turn_admission import TurnSkillSelection
 from app.scheduled_tasks.dsh_execution import ScheduledDshExecution
 from app.scheduled_tasks.runner import ScheduledChatRunner
@@ -254,6 +255,9 @@ def test_existing_pre_dsh_conversation_creates_a_kernel_binding_instead_of_falli
             ),
         )
         service = DshChatService(
+            topic_admission=TopicAdmissionService({
+                "topic_admission_policies": SimpleNamespace(find_one=_no_participant),
+            }),
             gateway=SimpleNamespace(),
             coordinator=coordinator,  # type: ignore[arg-type]
             conversations=Conversations(),  # type: ignore[arg-type]

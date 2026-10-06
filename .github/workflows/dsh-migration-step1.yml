@@ -66,6 +66,11 @@ jobs:
         run: python services/chat-api/scripts/check_dsh_upgrade_contract.py
       - name: Test versioned contracts and runtime boundary
         working-directory: services/chat-api
+        env:
+          # Real-Mongo fixtures use their own isolated databases. An accidental
+          # application-global get_db() must not be masked by a developer .env.
+          MONGODB_URI: ""
+          MOVO_TEST_MONGODB_URI: mongodb://localhost:27017
         run: python -m pytest tests/dsh_runtime -q
       - name: Test native Runtime Host modules
         working-directory: services/chat-api/dsh/runtime-host

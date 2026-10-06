@@ -42,6 +42,7 @@ from app.api.endpoints import sessions
 from app.dsh_runtime import chat_service as chat_service_module
 from app.dsh_runtime.bindings.repository import KernelBindingRepository
 from app.dsh_runtime.chat_service import DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.conversation import ConversationRepository
 from app.dsh_runtime.conversation.participants_repository import (
     SessionParticipantsRepository,
@@ -206,6 +207,7 @@ def initiator_thread(real_mongo_db, monkeypatch):
 
     gateway = _FakeGateway()
     chat = DshChatService(
+        topic_admission=TopicAdmissionService(harness.db),
         gateway=gateway,
         coordinator=RuntimeCoordinator(gateway, KernelBindingRepository(harness.db)),
         conversations=ConversationRepository(harness.db),
@@ -400,6 +402,7 @@ def test_a_run_without_a_recorded_initiator_denies_a_non_owner_cancel_attempt(re
     monkeypatch.setattr(chat_service_module, "get_db", lambda: harness.db, raising=False)
     gateway = _FakeGateway()
     chat = DshChatService(
+        topic_admission=TopicAdmissionService(harness.db),
         gateway=gateway,
         coordinator=RuntimeCoordinator(gateway, KernelBindingRepository(harness.db)),
         conversations=ConversationRepository(harness.db),

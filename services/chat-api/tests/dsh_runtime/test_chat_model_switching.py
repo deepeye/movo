@@ -7,6 +7,7 @@ from bson import ObjectId
 
 from app.dsh_runtime import chat_service as chat_service_module
 from app.dsh_runtime.chat_service import DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 
 
 def test_completed_conversation_turn_uses_the_newly_selected_model_binding(monkeypatch) -> None:
@@ -99,6 +100,9 @@ def test_completed_conversation_turn_uses_the_newly_selected_model_binding(monke
             ),
         )
         service = DshChatService(
+            topic_admission=TopicAdmissionService({
+                "topic_admission_policies": SimpleNamespace(find_one=_no_participant),
+            }),
             gateway=SimpleNamespace(),
             coordinator=coordinator,  # type: ignore[arg-type]
             conversations=Conversations(),  # type: ignore[arg-type]

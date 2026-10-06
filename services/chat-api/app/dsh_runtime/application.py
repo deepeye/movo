@@ -33,6 +33,7 @@ from app.enterprise_capabilities.delivery import AuthoritativeDeliveryRepository
 from app.enterprise_capabilities.runtime import InternalCapabilityCatalog, InternalCapabilityService
 from app.enterprise_capabilities.runtime.adapters import build_default_registry
 from app.governance.position_policy import MongoEmployeePolicyResolver
+from app.governance.topic_admission import TopicAdmissionService
 from app.services.presentation.execution import PresentationJobRepository
 from app.product.extensions import get_product_extension
 
@@ -47,11 +48,15 @@ class DshRuntimeApplication:
         self.tools: EnterpriseToolService | None = None
         self.desktop_bootstrap: DesktopRuntimeBootstrapService | None = None
         self.desktop_bindings: DesktopCodeBindingService | None = None
+        self.topic_admission: TopicAdmissionService | None = None
         self.host_healthy = False
 
     async def start(self) -> None:
         settings = get_settings()
         db = get_db()
+        self.topic_admission = TopicAdmissionService(
+            db, audience_policy=get_product_extension().topic_rule_audience_policy,
+        )
         secret = str(settings.DSH_MODEL_GATEWAY_SIGNING_SECRET or settings.ASKAI_ADMIN_JWT_SECRET or "")
         store = MongoRuntimeProfileStore()
         resolver = RuntimeProfileResolver(
@@ -130,6 +135,7 @@ class DshRuntimeApplication:
             turn_events=turn_events,
             execution_evidence=execution_evidence,
             authoritative_deliveries=authoritative_deliveries,
+            topic_admission=self.topic_admission,
         )
         # Process-restart recovery (T3): sweep orphaned durable claims after
         # DshChatService exists (so the single gateway's in-process session
@@ -156,6 +162,7 @@ class DshRuntimeApplication:
         self.tools = None
         self.desktop_bootstrap = None
         self.desktop_bindings = None
+        self.topic_admission = None
         self._transport = None
         self.host_healthy = False
 
@@ -174,6 +181,11 @@ class DshRuntimeApplication:
         if self.chat is None:
             raise RuntimeError("DSH Runtime Application is not started")
         return self.chat
+
+    def require_topic_admission(self) -> TopicAdmissionService:
+        if self.topic_admission is None:
+            raise RuntimeError("DSH Runtime Application is not started")
+        return self.topic_admission
 
     def require_tools(self) -> EnterpriseToolService:
         if self.tools is None:

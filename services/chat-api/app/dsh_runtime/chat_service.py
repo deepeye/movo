@@ -40,7 +40,7 @@ from app.dsh_runtime.turn_runner import DshTurnRunner
 from app.dsh_runtime.turn_finalization import TurnStateFinalizer
 from app.dsh_runtime.turn_recovery import TurnTerminalRecovery
 from app.enterprise_capabilities.evidence import ExecutionEvidenceRepository
-from app.governance.topic_admission import require_topic
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.events.authoritative_delivery import DeliveryStore
 
 
@@ -93,6 +93,7 @@ class DshChatService:
         turn_events: TurnEventRegistry | None = None,
         execution_evidence: ExecutionEvidenceRepository | None = None,
         authoritative_deliveries: DeliveryStore | None = None,
+        topic_admission: TopicAdmissionService | None = None,
     ) -> None:
         self._gateway = gateway
         self._coordinator = coordinator
@@ -100,6 +101,7 @@ class DshChatService:
         self._bindings = bindings
         self._events = events
         self._profiles = profiles
+        self._topic_admission = topic_admission
         self._profile_sync = ConversationProfileSynchronizer(profiles, coordinator)
         self._turn_events = turn_events
         self._turn_runner = DshTurnRunner(
@@ -154,7 +156,9 @@ class DshChatService:
         selected_writing_skill_id: str | None = None,
         selected_skill_id: str | None = None,
     ) -> PreparedTurn:
-        await require_topic(main_id=tenant_id, user_id=user_id, text=text)
+        if self._topic_admission is None:
+            raise RuntimeError("topic admission is not configured")
+        await self._topic_admission.require(main_id=tenant_id, user_id=user_id, text=text)
         temporal_context = build_temporal_context(timezone_name)
         locale = resolve_turn_locale(text, explicit=language_name)
         turn_context = {

@@ -50,6 +50,7 @@ from app.dsh_runtime import chat_service as chat_service_module
 from app.dsh_runtime.application import dsh_runtime_application
 from app.dsh_runtime.bindings.repository import KernelBindingRepository
 from app.dsh_runtime.chat_service import DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.conversation import ConversationRepository
 from app.dsh_runtime.conversation.participants_repository import (
     SessionParticipantsRepository,
@@ -254,6 +255,7 @@ def cancellable_thread(real_mongo_db, monkeypatch):
     release = asyncio.Event()
     gateway = _FakeGateway(release)
     chat = DshChatService(
+        topic_admission=TopicAdmissionService(harness.db),
         gateway=gateway,
         coordinator=RuntimeCoordinator(gateway, KernelBindingRepository(harness.db)),
         conversations=ConversationRepository(harness.db),

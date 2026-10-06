@@ -30,6 +30,7 @@ from app.dsh_runtime import chat_service as chat_service_module
 from app.dsh_runtime.application import dsh_runtime_application
 from app.dsh_runtime.bindings import KernelBindingRepository
 from app.dsh_runtime.chat_service import ConversationBusyError, DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.conversation import ConversationRepository
 from app.dsh_runtime.conversation.participants_repository import (
     SessionParticipantsRepository,
@@ -77,6 +78,7 @@ def readmit_env(real_mongo_db, monkeypatch):
         )
     )
     chat = DshChatService(
+        topic_admission=TopicAdmissionService(harness.db),
         gateway=SimpleNamespace(),
         coordinator=RuntimeCoordinator(SimpleNamespace(), KernelBindingRepository(harness.db)),
         conversations=ConversationRepository(harness.db),

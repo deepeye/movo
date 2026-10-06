@@ -46,6 +46,7 @@ from app.core.config import get_settings
 from app.core.end_user_auth import build_session_token
 from app.dsh_runtime.bindings.repository import KernelBindingRepository
 from app.dsh_runtime.chat_service import DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.conversation import ConversationRepository
 from app.dsh_runtime.conversation.participants_repository import (
     SessionParticipantsRepository,
@@ -759,6 +760,7 @@ def admission_lane(real_mongo_db, monkeypatch):
         )
     )
     chat = DshChatService(
+        topic_admission=TopicAdmissionService(harness.db),
         gateway=SimpleNamespace(),
         coordinator=RuntimeCoordinator(
             SimpleNamespace(), KernelBindingRepository(harness.db)

@@ -41,6 +41,7 @@ from app.api.principal import ApiPrincipal
 from app.dsh_runtime.application import dsh_runtime_application
 from app.dsh_runtime.bindings.repository import KernelBindingRepository
 from app.dsh_runtime.chat_service import ConversationBusyError, DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.conversation import ConversationRepository
 from app.dsh_runtime.conversation.participants_repository import (
     SessionParticipantsRepository,
@@ -344,6 +345,7 @@ def capabilities_thread(real_mongo_db, monkeypatch):
     )
     profiles = RuntimeProfilePublisher(compiler, MongoRuntimeProfileStore())
     chat = DshChatService(
+        topic_admission=TopicAdmissionService(harness.db),
         gateway=gateway,
         coordinator=RuntimeCoordinator(gateway, KernelBindingRepository(harness.db)),
         conversations=ConversationRepository(harness.db),

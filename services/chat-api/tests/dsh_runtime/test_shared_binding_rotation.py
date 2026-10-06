@@ -45,6 +45,7 @@ from app.dsh_runtime.bindings.repository import (
     KernelBindingRepository,
 )
 from app.dsh_runtime.chat_service import ConversationBusyError, DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 from app.dsh_runtime.conversation import ConversationRepository
 from app.dsh_runtime.conversation.participants_repository import (
     SessionParticipantsRepository,
@@ -234,6 +235,7 @@ def shared_thread(real_mongo_db, monkeypatch):
 
     gateway = _FakeGateway()
     chat = DshChatService(
+        topic_admission=TopicAdmissionService(harness.db),
         gateway=gateway,
         coordinator=RuntimeCoordinator(gateway, KernelBindingRepository(harness.db)),
         conversations=ConversationRepository(harness.db),
@@ -445,6 +447,9 @@ def test_binding_replacement_conflict_is_surfaced_as_a_retry_not_a_500(monkeypat
             ),
         )
         service = DshChatService(
+            topic_admission=TopicAdmissionService({
+                "topic_admission_policies": SimpleNamespace(find_one=_no_participant),
+            }),
             gateway=SimpleNamespace(),
             coordinator=Coordinator(),  # type: ignore[arg-type]
             conversations=Conversations(),  # type: ignore[arg-type]

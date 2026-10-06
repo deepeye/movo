@@ -8,6 +8,7 @@ from bson import ObjectId
 
 from app.dsh_runtime import chat_service as chat_service_module
 from app.dsh_runtime.chat_service import DshChatService
+from app.governance.topic_admission import TopicAdmissionService
 
 
 class _Conversations:
@@ -56,6 +57,9 @@ def test_server_chat_cannot_execute_a_desktop_project_history(monkeypatch) -> No
         ),
     )
     service = DshChatService(
+        topic_admission=TopicAdmissionService({
+            "topic_admission_policies": SimpleNamespace(find_one=_no_participant),
+        }),
         gateway=object(), coordinator=coordinator, conversations=_Conversations(),
         bindings=_Bindings(), events=object(), profiles=object(), kernel_version="test",
     )
