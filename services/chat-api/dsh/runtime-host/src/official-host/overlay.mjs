@@ -5,9 +5,9 @@ import { planOverlayRows } from './overlay-planner.mjs'
 export const ASKAI_DSH_HOST_OVERLAY_VERSION = 'askai-dsh-host-v1'
 export const ASKAI_ENTERPRISE_PRESET_ID = 'askai-enterprise'
 
-function hostRows({ askaiPresetRoot, shippedPresetRoot, storageDomainRoot, hostFeatures }) {
+function hostRows({ askaiPresetRoot, shippedPresetRoot, storageDomainRoot, hostFeatures, declarativePresets }) {
   return [
-    {
+    ...(declarativePresets ? [] : [{
       id: 'agent-presets',
       name: '@deepseek-ai/dsh-agent-presets',
       config: {
@@ -22,7 +22,22 @@ function hostRows({ askaiPresetRoot, shippedPresetRoot, storageDomainRoot, hostF
         ],
         includeUserRoot: false,
       },
-    },
+    }]),
+    ...(declarativePresets ? [{
+      id: 'preset-askai-enterprise',
+      name: '@deepseek-ai/dsh-agent-preset',
+      config: {
+        id: ASKAI_ENTERPRISE_PRESET_ID,
+        name: 'MOVO 企业助手',
+        description: '使用 MOVO 企业工具的普通会话',
+        order: 0,
+        plugins: [
+          { id: 'askai-enterprise-persona', name: resolve(askaiPresetRoot, '..', '..', 'src', 'official-host', 'enterprise-preset-plugin.mjs') },
+          { id: 'tool-web', name: '@deepseek-ai/dsh-tool-web', config: { fetch: false, searchTimeoutMs: 60000 } },
+          { id: 'tool-skill', name: '@deepseek-ai/dsh-tool-skill' },
+        ],
+      },
+    }] : []),
     ...(hostFeatures.subagentModelSelection
       ? [{
           id: 'subagent-model-selection-settings',
@@ -49,6 +64,7 @@ export function buildAskaiHostOverlay({
   storageRoot,
   askaiPresetRoot,
   shippedPresetRoot = askaiPresetRoot,
+  declarativePresets = false,
   webSearchProvider,
   occupiedIds = new Set(),
   hostFeatures = { subagentModelSelection: false },
@@ -61,8 +77,10 @@ export function buildAskaiHostOverlay({
     shippedPresetRoot,
     storageDomainRoot,
     hostFeatures,
+    declarativePresets,
   })
   return [
+    ...(declarativePresets ? [{ id: 'agent-preset-registry', config: { default: ASKAI_ENTERPRISE_PRESET_ID } }] : []),
     { id: 'hmr', disabled: true },
     // ASKAI owns the durable conversation title in its enterprise database.
     // Keep DSH's title service/API, but do not pay for a second first-prompt LLM

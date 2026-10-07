@@ -7,8 +7,8 @@ not consume DSH APIs directly. DSH-specific compatibility code belongs in
 
 | Item | Active baseline | Status | Upgrade rule |
 |---|---|---|---|
-| Reviewed upstream source | `0a15e36e7f82b6ed45af6fa9759f29b40dcd965d` (`dsh-v0.1.6-alpha.1`) | reviewed | review the upstream diff again |
-| Deployable npm train | `@deepseek-ai/dsh@0.1.6-alpha.1` | admitted, integrity pinned | pin every DSH package to one exact train |
+| Reviewed upstream source | `5badb15009ae1756c3afe0ae0cef1faafc290ccc` (`dsh-v0.2.1-alpha.1`) | reviewed | review the upstream diff again |
+| Deployable npm train | `@deepseek-ai/dsh@0.2.1-alpha.1` | local contract admitted, integrity pinned | pin every DSH package to one exact train |
 | Source/package mapping | unavailable upstream | unverified | do not claim cryptographic correspondence |
 | Node platform | `^22.19.0 || >=24.0.0` | required | test every supported deployment image |
 | Host protocol | `askai.dsh-host.v1` | frozen | adapt DSH changes inside Runtime Host |
@@ -18,11 +18,21 @@ not consume DSH APIs directly. DSH-specific compatibility code belongs in
 
 ## Admitted compatibility behavior
 
-DSH `0.1.6-alpha.1` replaces older Code runtime composition with its PTC
+DSH `0.1.6-alpha.1` replaced older Code runtime composition with its PTC
 runtime and migrates persisted Code sessions to the native `ptc` preset. The
 bridge keeps MOVO's public preset id as `code`; this preserves the existing
 product contract and remounts the expected file, shell, Skill and subagent tool
 surface after resume. MOVO does not expose the native preset rename.
+
+DSH `0.2.1-alpha.1` replaces directory-loaded presets with declarative preset
+rows and a registry. The embedded MOVO Host reuses the official Web patch
+declarations, maps their child-plugin module names to the installed DSH
+release, and keeps the public `code` preset identity. This second Loader tree
+does not inherit the Host's bare-module anchor; without the bridge mapping,
+sessions can be created but their tools never start. MOVO also drops the
+shipped subagent filter's schedule-tool names because its Host does not mount
+those tools; DSH now rejects unknown filter names. Background-job ownership
+changed to SessionId, which the cancellation bridge passes to list/kill/wait.
 
 The Session bridge also owns the upstream V3 API differences: persisted reads,
 in-memory event snapshots and seeded-session lineage. Cancellation waits for the
@@ -57,7 +67,7 @@ candidate into a temporary workspace. It must never mutate the active runtime
 in place. A candidate report can establish contract compatibility; application
 regression, packaged smoke and release rollback checks remain release gates.
 
-`0.1.2-alpha.2` remains the immediate rollback train. Roll back the complete
+`0.1.6-alpha.1` is the immediate rollback train. Roll back the complete
 versioned release rather than mixing DSH package versions inside one dependency
 graph. Because upstream Session migration can be one-way, preserve runtime data
 and rehearse rollback against a copy before production release.

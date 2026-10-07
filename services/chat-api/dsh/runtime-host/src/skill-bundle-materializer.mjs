@@ -26,11 +26,14 @@ async function exists(path) {
 }
 
 export class SkillBundleMaterializer {
-  constructor(storageRoot, { bundleGatewayUrl = '', fetchBundle = fetchSkillBundle } = {}) {
+  constructor(storageRoot, { bundleGatewayUrl = '', accessToken = '', fetchBundle = fetchSkillBundle } = {}) {
     this.root = resolve(storageRoot, 'imported-skills')
     this.bundleGatewayUrl = bundleGatewayUrl
+    this.accessToken = accessToken
     this.fetchBundle = fetchBundle
   }
+
+  updateCredential(accessToken) { this.accessToken = accessToken }
 
   async materialize(skill) {
     const encoded = String(skill?.bundle_archive_base64 ?? '')
@@ -43,7 +46,7 @@ export class SkillBundleMaterializer {
     const resourceRoot = resolve(destination, rootPrefix)
     if (archiveId && await exists(destination)) return resourceRoot
     const archive = archiveId
-      ? await this.fetchBundle(skill, this.bundleGatewayUrl)
+      ? await this.fetchBundle(skill, this.bundleGatewayUrl, { token: this.accessToken })
       : Buffer.from(encoded, 'base64')
     if (createHash('sha256').update(archive).digest('hex') !== digest) {
       throw new Error(`Skill bundle digest mismatch: ${skill?.name ?? 'unknown'}`)

@@ -31,7 +31,7 @@ const REQUIRED_HOST_MODULES = new Set([
   '@deepseek-ai/dsh-sandbox-policy',
   '@deepseek-ai/dsh-user-approval',
   '@deepseek-ai/dsh-tools',
-  '@deepseek-ai/dsh-agent-presets',
+  '@deepseek-ai/dsh-agent-preset-registry',
   '@deepseek-ai/dsh-ptc-runtime-node',
   '@deepseek-ai/dsh-workspace',
   '@deepseek-ai/dsh-host-plugin-inventory',
@@ -224,7 +224,8 @@ test('official Host boots the pinned Base, Workspace, inventory, and shipped pre
         assert.equal(preset.broken, undefined)
       }
       const shippedCode = await resolveNativePreset(presets, DSH_CODE_PRESET_ID)
-      assert.ok(shippedCode.path.startsWith(host.installation.shippedPresetRoot))
+      assert.equal(shippedCode.broken, undefined)
+      assert.ok(['standard', 'code'].includes(shippedCode.id))
 
       const workspaceDir = join(root, 'workspace')
       await import('node:fs/promises').then(({ mkdir }) => mkdir(workspaceDir))

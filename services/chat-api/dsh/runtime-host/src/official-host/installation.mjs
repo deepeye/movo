@@ -32,25 +32,28 @@ export async function resolveDshInstallation() {
   }
   const webAppManifestPath = requireFromDsh.resolve('@deepseek-ai/dsh-web-app/package.json')
   const webAppManifest = await readManifest(webAppManifestPath)
-  const webAppPatch = webAppManifest?.dsh?.bundle?.patch
-  if (typeof webAppPatch !== 'string' || !webAppPatch) {
+  const declaredWebPatches = webAppManifest?.dsh?.bundle?.patch
+  const webAppPatches = (Array.isArray(declaredWebPatches) ? declaredWebPatches : [declaredWebPatches])
+    .filter(patch => typeof patch === 'string' && patch.length > 0)
+  if (webAppPatches.length === 0) {
     throw new Error('@deepseek-ai/dsh-web-app does not declare dsh.bundle.patch')
   }
   const dshManifest = await readManifest(dshManifestPath)
-  const presetManifestPath = requireFromDsh.resolve('@deepseek-ai/dsh-agent-presets/package.json')
-  const shippedPresetRoot = await resolveShippedPresetRoot([
-    // 0.1.2 packages presets with the roster implementation.
-    join(dirname(presetManifestPath), 'presets'),
-    // The approved 0.1.1 rollback train packages them with the DSH launcher.
-    join(dshPackageDir, 'config', 'agent-presets'),
-  ])
+  let shippedPresetRoot
+  if (webAppPatches.length === 1) {
+    const presetManifestPath = requireFromDsh.resolve('@deepseek-ai/dsh-agent-presets/package.json')
+    shippedPresetRoot = await resolveShippedPresetRoot([
+      join(dirname(presetManifestPath), 'presets'),
+      join(dshPackageDir, 'config', 'agent-presets'),
+    ])
+  }
   return Object.freeze({
     version: String(dshManifest.version),
     dshManifestPath,
     dshPackageDir,
     moduleBaseUrl: pathToFileURL(dshManifestPath).href,
     basePatchPath: join(dirname(baseManifestPath), basePatch),
-    webAppPatchPath: join(dirname(webAppManifestPath), webAppPatch),
+    webAppPatchPaths: webAppPatches.map(patch => join(dirname(webAppManifestPath), patch)),
     shippedPresetRoot,
     resolveDependency(specifier) {
       return requireFromDsh.resolve(specifier)

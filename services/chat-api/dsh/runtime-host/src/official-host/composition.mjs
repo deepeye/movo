@@ -9,7 +9,10 @@ import {
 } from './overlay.mjs'
 import { collectInsertedEntryIds } from './overlay-planner.mjs'
 import { extractOfficialPresetIsolation } from './preset-isolation.mjs'
+import { resolvePresetModules } from './preset-module-resolution.mjs'
 import { readPluginInventory } from './inventory-compat.mjs'
+import { prepareManagedProfile } from './managed-profile.mjs'
+import { reconcileProfilePlugins } from './plugin-reconciler.mjs'
 import { recoverWindowsStaleModuleLock } from './windows-stale-module-lock.mjs'
 import { recoverWindowsEmptyModuleFallbacks } from './windows-empty-module-fallbacks.mjs'
 
@@ -22,33 +25,62 @@ export class OfficialDshHostComposition {
   #ctx
   #inventory
 
-  constructor({ storageRoot, webSearchProvider }) {
+  constructor({ storageRoot, webSearchProvider, plugins = [] }) {
     this.storageRoot = resolve(storageRoot)
     this.webSearchProvider = webSearchProvider
+    this.plugins = plugins
   }
 
   async start() {
     if (this.#ctx !== undefined) throw new Error('official DSH Host composition is already started')
+    await this.#boot()
+    try {
+      if (await reconcileProfilePlugins(this.#ctx.get('pluginManager'), this.plugins)) {
+        await this.dispose()
+        await this.#boot()
+      }
+      const active = new Map((await this.#ctx.get('pluginManager').listBundles())
+        .map(item => [item.name, item]))
+      for (const plugin of this.plugins) {
+        const item = active.get(plugin.name)
+        if (!item?.enabled || item.version !== plugin.version || item.error) {
+          throw new Error(`DSH plugin ${plugin.name} did not activate in this Runtime Profile`)
+        }
+        for (const row of item.rows ?? []) {
+          const entry = this.#inventory.entries.find(candidate => candidate.entryId === row.entryId)
+          if (!entry || (entry.enabled && entry.fiberPhase !== 'active')) {
+            throw new Error(`DSH plugin ${plugin.name} row ${row.rowId} did not become active (${entry?.fiberPhase ?? 'missing'})`)
+          }
+        }
+      }
+      return this.#ctx
+    } catch (error) {
+      await this.dispose()
+      throw error
+    }
+  }
+
+  async #boot() {
     const installation = await resolveDshInstallation()
     const appBoot = await loadAssociatedAppBoot(installation)
     const moduleHome = resolve(this.storageRoot, 'host-profile-home')
-    const profileDir = resolve(moduleHome, 'profiles', 'askai-host')
-    const profileRoot = resolve(profileDir, 'cordis.yml')
-    await mkdir(profileDir, { recursive: true })
-    await writeFile(profileRoot, await readFile(ROOT_CONFIG, 'utf8'))
+    await mkdir(moduleHome, { recursive: true })
     await recoverWindowsStaleModuleLock(moduleHome)
     await recoverWindowsEmptyModuleFallbacks(moduleHome)
     await healModuleFallback(appBoot, installation, moduleHome)
-    const basePatches = appBoot.loadOverlayPatches('askai-dsh-host', installation.basePatchPath)
-    const webAppPatches = appBoot.loadOverlayPatches(
-      'askai-dsh-official-preset-isolation',
-      installation.webAppPatchPath,
-    )
+    const initialProfile = await prepareManagedProfile({
+      appBoot, installation, moduleHome, overlays: [],
+    })
+    const basePatches = initialProfile.basePatches
+    const webAppPatches = installation.webAppPatchPaths.flatMap(path => appBoot.loadOverlayPatches(
+      'askai-dsh-official-preset-isolation', path,
+    ))
     const presetIsolation = extractOfficialPresetIsolation(webAppPatches)
     const askaiOverlay = buildAskaiHostOverlay({
       storageRoot: this.storageRoot,
       askaiPresetRoot: ASKAI_PRESET_ROOT,
       shippedPresetRoot: installation.shippedPresetRoot,
+      declarativePresets: presetIsolation.declarative,
       webSearchProvider: this.webSearchProvider,
       occupiedIds: collectInsertedEntryIds(basePatches),
       hostFeatures: {
@@ -57,19 +89,26 @@ export class OfficialDshHostComposition {
         ),
       },
     })
+    const overlays = [...resolvePresetModules([...presetIsolation.patches, ...askaiOverlay], installation)]
+    const managedProfile = await prepareManagedProfile({
+      appBoot, installation, moduleHome, overlays,
+    })
+    await writeFile(managedProfile.root, await readFile(ROOT_CONFIG, 'utf8'))
     this.#ctx = await appBoot.boot(
       'askai-dsh-host',
-      profileRoot,
-      [...basePatches, ...presetIsolation.patches, ...askaiOverlay],
+      managedProfile.root,
+      managedProfile.patches,
+      async ctx => {
+        ctx.provide('profileContext', managedProfile.context)
+        await ctx.plugin(appBoot.PluginPackages, { resolution: managedProfile.resolution })
+      },
       undefined,
-      installation.moduleBaseUrl,
     )
     this.installation = installation
     this.presetIsolation = presetIsolation
     const gateway = this.#ctx.get('pluginInventory')
     if (gateway === undefined) throw new Error('official DSH plugin inventory is unavailable')
     this.#inventory = await readPluginInventory(gateway)
-    return this.#ctx
   }
 
   get ctx() {
@@ -98,7 +137,7 @@ export class OfficialDshHostComposition {
 async function healModuleFallback(appBoot, installation, moduleHome) {
   const heal = appBoot.healProfilesModuleFallback
   if (typeof heal !== 'function') {
-    throw new Error('official DSH app boot does not expose module fallback healing')
+    return
   }
   // DSH 0.1.2 moved module fallback healing to an asynchronous options
   // contract. Retain the positional call only for the approved rollback train.

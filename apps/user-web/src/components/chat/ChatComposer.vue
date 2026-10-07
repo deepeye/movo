@@ -157,7 +157,9 @@ function detectDocumentType(file: File): ChatDocumentKind | null {
   if (name.endsWith('.pdf')) return 'pdf'
   if (name.endsWith('.docx') || name.endsWith('.doc')) return 'docx'
   if (name.endsWith('.pptx') || name.endsWith('.ppt')) return 'pptx'
-  if (name.endsWith('.md')) return 'md'
+  // Plain text follows the same text-document path as Markdown; keep the
+  // original filename so the backend parses the actual .txt extension.
+  if (name.endsWith('.md') || name.endsWith('.txt')) return 'md'
   if (name.endsWith('.xlsx') || name.endsWith('.xlsm') || name.endsWith('.xls')) return 'xlsx'
   if (name.endsWith('.csv') || name.endsWith('.tsv')) return 'xlsx'
   return null
@@ -470,7 +472,7 @@ async function sendMessage() {
     images: imageFiles,
     documents: documentFiles,
     knowledgeQaEnabled: knowledgeQaEnabled.value,
-    selectedSkillId: selectedSkill.value?.id || undefined,
+    selectedSkillId: skill?.id || undefined,
     modelId: props.selectedModelId || undefined,
     onRejected: () => {
       userInput.value = userInput.value ? `${text}\n\n${userInput.value}` : text

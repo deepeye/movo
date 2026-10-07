@@ -106,7 +106,9 @@ class MongoRuntimeProfileStore:
     ) -> None:
         db = get_db()
         existing = await db[PROFILE_COLLECTION].find_one({"profile_version": snapshot.profile_version})
-        document = snapshot.model_dump(mode="json")
+        document = snapshot.model_dump(
+            mode="json", exclude={"plugins", "plugin_versions"} if not snapshot.plugins else None,
+        )
         if existing is not None:
             previous = {key: existing.get(key) for key in document}
             if previous != document:

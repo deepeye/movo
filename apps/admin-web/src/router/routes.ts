@@ -8,6 +8,7 @@ import { TrafficAllocationIcon } from '@/icons/TrafficAllocationIcon';
 import { UserManagementIcon } from '@/icons/UserManagementIcon';
 import { ToolsMcpIcon } from '@/icons/ToolsMcpIcon';
 import { SkillsManagerIcon } from '@/icons/SkillsManagerIcon';
+import { DshPluginsIcon } from '@/icons/DshPluginsIcon';
 import { SettingsIcon } from '@/icons/SettingsIcon';
 import { PositionRolesIcon } from '@/icons/PositionRolesIcon';
 import { SystemAuditIcon } from '@/icons/SystemAuditIcon';
@@ -76,6 +77,12 @@ export const appRoutes: RouteRecordRaw[] = [
         name: 'SkillConfig',
         component: () => import('@/views/skills/SkillConfigPage.vue'),
         meta: { title: 'Skill配置', hideInMenu: true },
+      },
+      {
+        path: '/dsh-plugins',
+        name: 'DshPlugins',
+        component: () => import('@/views/dsh-plugins/DshPluginsPage.vue'),
+        meta: { title: 'dshPlugins.title', icon: DshPluginsIcon },
       },
       {
         path: '/tools',

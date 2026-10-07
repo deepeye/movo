@@ -35,6 +35,7 @@ class RuntimeProfileSnapshot(BaseModel):
     skill_versions: tuple[str, ...] = ()
     workflow_versions: tuple[str, ...] = ()
     plugin_versions: tuple[str, ...] = ()
+    plugins: tuple[dict[str, object], ...] = ()
 
     def host_payload(
         self,
@@ -44,6 +45,7 @@ class RuntimeProfileSnapshot(BaseModel):
         tool_gateway_url: str = "",
         tool_access_token: str = "",
         bundle_gateway_url: str = "",
+        plugin_gateway_url: str = "",
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             "profileVersion": self.profile_version,
@@ -74,4 +76,10 @@ class RuntimeProfileSnapshot(BaseModel):
             if not bundle_gateway_url:
                 raise ValueError("GridFS Skill Profile has no bundle gateway")
             payload["bundleGatewayUrl"] = bundle_gateway_url
+        if self.plugins:
+            if any(item.get("archive_id") for item in self.plugins):
+                if not plugin_gateway_url:
+                    raise ValueError("Plugin archive Profile has no gateway")
+                payload["pluginGatewayUrl"] = plugin_gateway_url
+            payload["plugins"] = [dict(item) for item in self.plugins]
         return payload

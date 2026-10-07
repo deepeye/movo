@@ -119,6 +119,7 @@ function event(overrides: Partial<ExecutionEventV3>): ExecutionEventV3 {
   assert.equal(toolDisplayName(unseenTool), '合同条款检查')
   assert.equal(toolCallSummary(unseenTool), '')
   assert.equal(toolDisplayName({ ...unseenTool, payload: { name: 'mcp_contract_review', display_name: 'mcp_contract_review' } }), '')
+  assert.equal(toolDisplayName({ ...unseenTool, payload: { name: 'plugin_doctor', display_name: 'plugin_doctor', plugin_name: 'dsh-plugin-doctor' } }), 'plugin_doctor')
 }
 
 {

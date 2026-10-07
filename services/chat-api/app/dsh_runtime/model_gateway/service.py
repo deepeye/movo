@@ -209,6 +209,22 @@ class ModelGatewayService:
             except ValueError:
                 role = Role.USER
             content = raw.get("content")
+            if role == Role.TOOL:
+                # DSH v4 sends a first-class tool message; older sessions put
+                # the same call id inside a user-role tool-result block below.
+                call_id = str(raw.get("toolCallId") or raw.get("tool_call_id") or "")
+                if not call_id:
+                    raise ValueError("DSH tool message is missing toolCallId")
+                if isinstance(content, list):
+                    text = "\n".join(
+                        str(block.get("text") or "")
+                        for block in content
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    )
+                else:
+                    text = str(content or "")
+                result.append(Message(role=Role.TOOL, content=text, tool_call_id=call_id))
+                continue
             if isinstance(content, list):
                 blocks = [block for block in content if isinstance(block, dict)]
                 tool_results = [block for block in blocks if block.get("type") == "tool-result"]

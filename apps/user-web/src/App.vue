@@ -50,6 +50,7 @@ import { AppsOutline, SettingsOutline } from '@vicons/ionicons5'
 
 const ChatWindow = defineAsyncComponent(() => import('./components/ChatWindow.vue'))
 const SkillsPage = defineAsyncComponent(() => import('./components/MySkillsPage.vue'))
+const PluginsPage = defineAsyncComponent(() => import('./components/MyPluginsPage.vue'))
 const ToolsPage = defineAsyncComponent(() => import('./components/MyToolsPage.vue'))
 const KnowledgePage = defineAsyncComponent(() => import('./components/MyKnowledgePage.vue'))
 const SkillConfigPage = defineAsyncComponent(() => import('./components/MySkillConfigPage.vue'))
@@ -147,10 +148,11 @@ const pendingDeleteSession = ref<SessionSummary | SessionSearchResult | null>(nu
 const editingSessionId = ref<string | null>(null)
 const editingSessionTitle = ref('')
 const renamingSessionId = ref<string | null>(null)
-const currentView = ref<'chat' | 'skills' | 'tools' | 'knowledge' | 'skill-config' | 'composite-editor' | 'token-usage' | 'scheduled-tasks'>('chat')
+const currentView = ref<'chat' | 'skills' | 'plugins' | 'tools' | 'knowledge' | 'skill-config' | 'composite-editor' | 'token-usage' | 'scheduled-tasks'>('chat')
 const desktopPrimarySection = computed<DesktopPrimarySection>(() => {
   if (currentView.value === 'scheduled-tasks') return 'scheduled'
   if (currentView.value === 'skills' || currentView.value === 'skill-config' || currentView.value === 'composite-editor') return 'skills'
+  if (currentView.value === 'plugins') return 'plugins'
   if (currentView.value === 'tools') return 'tools'
   if (currentView.value === 'knowledge') return 'knowledge'
   return 'home'
@@ -920,6 +922,7 @@ function resolveViewFromPath(pathname: string) {
   const path = String(pathname || '/').replace(/\/+$/, '') || '/'
   if (path === '/usage' || path === '/token-usage') return 'token-usage'
   if (path === '/skills') return 'skills'
+  if (path === '/plugins') return 'plugins'
   if (path === '/tools') return 'tools'
   if (path === '/knowledge') return 'knowledge'
   if (path === '/scheduled-tasks') return 'scheduled-tasks'
@@ -932,6 +935,7 @@ function routePathForView(view: typeof currentView.value) {
   if (view === 'knowledge') return '/knowledge'
   if (view === 'scheduled-tasks') return '/scheduled-tasks'
   if (view === 'skills' || view === 'skill-config' || view === 'composite-editor') return '/skills'
+  if (view === 'plugins') return '/plugins'
   return '/'
 }
 
@@ -1065,6 +1069,7 @@ function openDesktopPrimarySection(section: DesktopPrimarySection) {
   if (section === 'home') navigateTo('chat')
   else if (section === 'scheduled') openScheduledTasks()
   else if (section === 'skills') openSkillsPage()
+  else if (section === 'plugins') navigateTo('plugins')
   else if (section === 'tools') openToolsPage()
   else openKnowledgePage()
 }
@@ -2493,6 +2498,14 @@ onBeforeUnmount(() => {
           >{{ pendingSkillShareCount > 99 ? '99+' : pendingSkillShareCount }}</span>
         </button>
         <button
+          class="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left text-sm transition-all active:scale-95"
+          :class="currentView === 'plugins' ? 'bg-white text-blue-700 shadow-sm border-gray-200 font-semibold' : 'text-gray-700 hover:bg-gray-200/50'"
+          @click="navigateTo('plugins')"
+        >
+          <span class="text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8v4h4v5h-4v3h4v6H4v-6h4v-3H4V7h4V3Z"/><path d="M8 7h8M8 15h8"/></svg></span>
+          <span>{{ t('plugins.sidebar') }}</span>
+        </button>
+        <button
           v-if="canUseTools"
           class="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left text-sm transition-all active:scale-95"
           :class="currentView === 'tools' 
@@ -2735,6 +2748,7 @@ onBeforeUnmount(() => {
             @share-count-change="refreshSkillShareCount"
           />
         </div>
+        <div v-else-if="currentView === 'plugins'" class="flex-1 min-w-0 min-h-0 overflow-hidden"><PluginsPage /></div>
         <div v-else-if="currentView === 'tools'" class="flex-1 min-w-0 min-h-0 overflow-hidden">
           <ToolsPage
             :userId="getUserId()"

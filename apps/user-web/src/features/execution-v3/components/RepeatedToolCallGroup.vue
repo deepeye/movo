@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ExecutionItemV3 } from '../domain/model'
-import { toolActionLabelKey, toolCallSummary, toolDisplayName } from '../domain/repeatedToolCalls'
+import { toolCallSummary, toolName } from '../domain/repeatedToolCalls'
 import { t } from '../../../composables/i18n'
 import ActivityIcon from './ActivityIcon.vue'
 
@@ -10,8 +10,10 @@ const expanded = ref(false)
 const hasFailure = computed(() => props.statusItems.some(item => item.status === 'failed'))
 const isRunning = computed(() => props.statusItems.some(item => item.status === 'running'))
 const showsProgress = computed(() => !hasFailure.value && isRunning.value)
-const itemLabel = (item: ExecutionItemV3) => toolDisplayName(item) || t(toolActionLabelKey(item))
-const label = computed(() => [...new Set(props.items.map(itemLabel))].join(t('execution.v3.activity_separator')))
+const activeTool = computed(() => [...props.items].reverse().find(item => item.status === 'running'))
+const label = computed(() => activeTool.value
+  ? t('execution.v3.tool_group_running', { name: toolName(activeTool.value) })
+  : showsProgress.value ? t('execution.v3.tool_group_waiting') : t('execution.v3.tool_group_completed'))
 
 function syncExpanded(event: Event) {
   expanded.value = Boolean((event.currentTarget as HTMLDetailsElement).open)
@@ -29,8 +31,8 @@ function syncExpanded(event: Event) {
     <ol>
       <li v-for="item in items" :key="item.id" :class="`status-${item.status}`">
         <ActivityIcon category="tool" kind="tool" />
-        <span class="tool-call-name">{{ itemLabel(item) }}</span>
-        <span class="tool-call-summary">{{ toolCallSummary(item) || t('execution.v3.tool_call_completed') }}</span>
+        <span class="tool-call-name">{{ toolName(item) }}</span>
+        <span class="tool-call-summary">{{ toolCallSummary(item) || t(item.status === 'running' ? 'execution.v3.processing' : 'execution.v3.tool_call_completed') }}</span>
         <span v-if="item.status === 'failed'" class="repeated-tool-error">{{ String(item.payload?.error || t('ui.failed')) }}</span>
       </li>
     </ol>

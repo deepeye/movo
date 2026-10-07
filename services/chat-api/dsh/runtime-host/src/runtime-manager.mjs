@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { rm } from 'node:fs/promises'
 import { KernelRuntime } from './kernel-runtime.mjs'
 import { normalizeModelProfile } from './model-profile.mjs'
 
@@ -52,7 +53,7 @@ export class RuntimeManager {
       runtimeId: runtime.runtimeId,
       isolationKey: runtime.isolationKey,
       profileVersion: runtime.profileVersion,
-      modelInstanceId: runtime.modelProfile?.modelInstanceId,
+      modelInstanceId: runtime.modelProfile?.modelInstanceId ?? runtime.modelInstanceId,
     }
   }
 
@@ -60,11 +61,15 @@ export class RuntimeManager {
     return await this.get(runtimeId).exportCompletedSeed(sessionId)
   }
 
-  async dispose(runtimeId) {
+  async dispose(runtimeId, { purge = false } = {}) {
     const runtime = this.get(runtimeId)
+    if (purge && !runtime.isolationKey.startsWith('plugin-install-validation:')) {
+      throw new Error('only plugin validation runtimes may be purged')
+    }
     this.#runtimes.delete(runtimeId)
     this.#isolationOwners.delete(runtime.isolationKey)
     await runtime.dispose()
+    if (purge) await rm(runtime.storageRoot, { recursive: true, force: true })
   }
 
   async disposeAll() {

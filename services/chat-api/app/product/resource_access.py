@@ -5,7 +5,7 @@ from typing import Iterable, Literal
 from app.product.extensions import get_product_extension
 
 
-ResourceType = Literal["skill", "tool"]
+ResourceType = Literal["skill", "tool", "plugin"]
 
 
 async def filter_allowed_resource_ids(

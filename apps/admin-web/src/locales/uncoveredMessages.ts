@@ -4,6 +4,7 @@ import { modelMessages } from './modules/models';
 import { knowledgeMessages } from './modules/knowledge';
 import { settingsMessages } from './modules/settings';
 import { taskAdmissionMessages } from './modules/taskAdmission';
+import { dshPluginMessages } from './modules/dshPlugins';
 import { organizationMessages } from './modules/organization';
 import { skillWorkflowMessages } from './modules/skillWorkflow';
 import { modelAccessMessages } from './modules/modelAccess';
@@ -18,6 +19,7 @@ export const uncoveredMessages = {
   ...knowledgeMessages,
   ...settingsMessages,
   ...taskAdmissionMessages,
+  ...dshPluginMessages,
   ...organizationMessages,
   ...skillWorkflowMessages,
   ...modelAccessMessages,

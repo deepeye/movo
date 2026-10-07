@@ -24,6 +24,7 @@ from app.dsh_runtime.evidence_projection import (
 )
 from app.dsh_runtime.gateway import DshAgentKernelGateway
 from app.dsh_runtime.profile.service import RuntimeProfilePublisher
+from app.dsh_runtime.plugin_management.invocation import PluginInvocationRecorder
 from app.dsh_runtime.turn_finalization import (
     TurnAssistantProjection,
     TurnStateFinalizer,
@@ -59,6 +60,7 @@ class DshTurnRunner:
         turn_events: TurnEventRegistry | None = None,
         execution_evidence: ExecutionEvidenceRepository | None = None,
         authoritative_deliveries: DeliveryStore | None = None,
+        plugin_invocations: PluginInvocationRecorder | None = None,
         credential_refresh_interval_seconds: float = 240.0,
     ) -> str:
         self._gateway = gateway
@@ -69,6 +71,7 @@ class DshTurnRunner:
         self._turn_events = turn_events
         self._execution_evidence = execution_evidence
         self._authoritative_deliveries = authoritative_deliveries
+        self._plugin_invocations = plugin_invocations
         self._finalizer = TurnStateFinalizer(bindings, conversations)
         self._credential_refresh_interval_seconds = credential_refresh_interval_seconds
         self._mapper = DshEventMapper(kernel_version=kernel_version)
@@ -96,6 +99,8 @@ class DshTurnRunner:
         terminal_projection: dict[str, Any] | None = None
         browser_intervention: dict[str, Any] | None = None
         writer_aborted = False
+        successful_plugin_tools: set[str] = set()
+        session_plugins: tuple[dict[str, Any], ...] = ()
         writer = DurableKernelEventWriter(
             events=self._events,
             bindings=self._bindings,
@@ -112,6 +117,7 @@ class DshTurnRunner:
         )
         try:
             profile = await self._profiles.get(str(binding["profile_version"]))
+            session_plugins = tuple(dict(item) for item in profile.plugins)
             tool_ui = tool_presentations(profile)
             delivery_guard = AuthoritativeDeliveryGuard(
                 store=self._authoritative_deliveries,
@@ -158,6 +164,13 @@ class DshTurnRunner:
                     tool_presentations=tool_ui,
                 )
                 projected = await delivery_guard.apply(event, projected)
+                if (
+                    projected is not None
+                    and projected.get("item_kind") == "tool"
+                    and projected.get("type") == "item.completed"
+                    and (projected.get("payload") or {}).get("ok") is True
+                ):
+                    successful_plugin_tools.add(str(projected["payload"].get("name") or ""))
                 is_terminal = event.type in {"turn.completed", "runtime.failed"}
                 if projected is not None:
                     projected = await self._publish_kernel(
@@ -308,6 +321,13 @@ class DshTurnRunner:
                 pass
         finally:
             await credential_lease.stop()
+            if self._plugin_invocations and successful_plugin_tools:
+                await self._plugin_invocations.record(
+                    tenant_id=str(binding["tenant_id"]),
+                    user_id=str(binding["user_id"]),
+                    plugins=session_plugins,
+                    tool_names=successful_plugin_tools,
+                )
             if terminal_projection is not None:
                 live_stream.publish(terminal_projection)
             live_stream.finish()

@@ -36,8 +36,10 @@ class HttpKernelHostTransport:
         base_url: str,
         *,
         timeout_seconds: float = 10.0,
+        startup_timeout_seconds: float = 60.0,
         access_token: str = "",
     ) -> None:
+        self._startup_timeout_seconds = startup_timeout_seconds
         headers = {"Authorization": f"Bearer {access_token}"} if access_token else None
         self._client = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
@@ -54,7 +56,12 @@ class HttpKernelHostTransport:
         params: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         try:
-            response = await self._client.request(method, path, json=json, params=params)
+            timeout = (
+                self._startup_timeout_seconds
+                if method.upper() == "POST" and path == "/v1/runtimes"
+                else self._client.timeout
+            )
+            response = await self._client.request(method, path, json=json, params=params, timeout=timeout)
         except httpx.HTTPError as exc:
             raise DshTransportError(f"DSH Runtime Host is unavailable: {exc}") from exc
         try:

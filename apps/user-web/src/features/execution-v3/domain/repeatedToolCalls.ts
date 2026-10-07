@@ -52,6 +52,13 @@ export function toolName(item: ExecutionItemV3): string {
 export function toolDisplayName(item: ExecutionItemV3): string {
   const displayName = String(item.payload?.display_name || '').replace(/\s+/g, ' ').trim()
   const adapterName = String(item.payload?.name || '').trim()
+  const pluginName = String(item.payload?.plugin_name || '').trim()
+  if (pluginName && /^[a-z][a-z0-9_]{1,79}$/i.test(adapterName)) return adapterName
+  // DSH plugin tools can have only a short native name (for example, greet).
+  // Show that name for otherwise anonymous "call tool" activities, while
+  // keeping internal adapter identifiers and built-in action labels hidden.
+  if ((!displayName || displayName === adapterName) && toolCapability(item) === null
+    && /^[a-z][a-z0-9]{1,39}$/i.test(adapterName)) return adapterName
   if (!displayName || displayName === adapterName || /^[a-z][a-z0-9]*(?:[_.:-][a-z0-9]+)+$/i.test(displayName)) return ''
   return displayName.slice(0, 80)
 }

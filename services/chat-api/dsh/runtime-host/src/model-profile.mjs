@@ -10,6 +10,8 @@ const ALLOWED_FIELDS = new Set([
   'toolProfile',
   'skillProfile',
   'bundleGatewayUrl',
+  'pluginGatewayUrl',
+  'plugins',
 ])
 
 function nonEmptyString(value) {
@@ -75,6 +77,23 @@ export function normalizeModelProfile(modelProfile, profileVersion) {
     validateSkillProfile(modelProfile.skillProfile)
     if (modelProfile.skillProfile.skills.some(skill => skill.bundle_archive_id) && !nonEmptyString(modelProfile.bundleGatewayUrl)) {
       throw new Error('modelProfile is missing bundleGatewayUrl')
+    }
+  }
+  if (modelProfile.plugins !== undefined) {
+    if (!Array.isArray(modelProfile.plugins)) throw new Error('plugins must be an array')
+    const names = new Set()
+    for (const plugin of modelProfile.plugins) {
+      if (!plugin || typeof plugin !== 'object' || Array.isArray(plugin) ||
+          !nonEmptyString(plugin.name) || !nonEmptyString(plugin.version) ||
+          !nonEmptyString(plugin.spec) || names.has(plugin.name) ||
+          !['personal', 'organization'].includes(plugin.source_scope) ||
+          (plugin.archive_id !== undefined && (!/^[0-9a-f]{32}$/.test(plugin.archive_id) ||
+            !/^[0-9a-f]{64}$/.test(plugin.archive_digest ?? '') || !nonEmptyString(modelProfile.pluginGatewayUrl))) ||
+          (plugin.tool_names !== undefined && (!Array.isArray(plugin.tool_names) ||
+            plugin.tool_names.some(name => !nonEmptyString(name))))) {
+        throw new Error('plugins contains an invalid DSH plugin declaration')
+      }
+      names.add(plugin.name)
     }
   }
   return Object.freeze(structuredClone(modelProfile))

@@ -18,6 +18,7 @@ class RuntimeProfileResolver:
         tool_token_service: ToolGatewayTokenService | None = None,
         tool_gateway_url: str = "",
         bundle_gateway_url: str = "",
+        plugin_gateway_url: str = "",
     ) -> None:
         self._store = store
         self._tokens = token_service
@@ -25,6 +26,7 @@ class RuntimeProfileResolver:
         self._tool_tokens = tool_token_service
         self._tool_gateway_url = tool_gateway_url
         self._bundle_gateway_url = bundle_gateway_url
+        self._plugin_gateway_url = plugin_gateway_url
 
     async def resolve(self, profile_version: str, *, tenant_id: str | None = None) -> dict[str, object]:
         snapshot = await self._store.get(profile_version)
@@ -53,4 +55,5 @@ class RuntimeProfileResolver:
             tool_gateway_url=self._tool_gateway_url,
             tool_access_token=tool_token,
             bundle_gateway_url=self._bundle_gateway_url,
+            plugin_gateway_url=self._plugin_gateway_url,
         )

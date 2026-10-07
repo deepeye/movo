@@ -10,6 +10,7 @@ import * as DeterministicModelPlugin from './deterministic-model-plugin.mjs'
 import { AskaiModelGatewayAdapter } from './askai-model-gateway-plugin.mjs'
 import { EventJournal } from './event-journal.mjs'
 import { NativePluginRegistry } from './native-plugin-registry.mjs'
+import { ManagedPluginBridge } from './managed-plugin-bridge.mjs'
 import { AskaiToolBridge } from './askai-tool-bridge-plugin.mjs'
 import { AskaiWebSearchProvider } from './askai-web-search-provider.mjs'
 import { RuntimeTemporalContext } from './runtime-temporal-context.mjs'
@@ -40,6 +41,7 @@ export class KernelRuntime {
   #journal = new EventJournal()
   #liveAssistantStream = new LiveAssistantStream(this.#journal)
   #plugins
+  #managedPlugins
   #modelAdapter
   #modelAdapterDispose
   #toolBridge
@@ -52,6 +54,7 @@ export class KernelRuntime {
   #workspaces
   #desktopApprovals
   #skillProviderDispose
+  #skillProvider
   #skillResourceToolDispose
   #skillInvocations
 
@@ -70,17 +73,21 @@ export class KernelRuntime {
     this.#composition = new OfficialDshHostComposition({
       storageRoot: this.storageRoot,
       webSearchProvider: this.modelProfile?.toolProfile === undefined ? undefined : 'askai-enterprise',
+      plugins: this.modelProfile?.plugins,
     })
     const ctx = await this.#composition.start()
     this.#ctx = ctx
+    this.#managedPlugins = new ManagedPluginBridge(ctx)
     this.#temporalContext.install(ctx)
     this.#turnContext.install(ctx)
     const skillProviderRegistration = registerAskaiSkillProvider(
       ctx, this.modelProfile?.skillProfile, {
         storageRoot: this.storageRoot,
         bundleGatewayUrl: this.modelProfile?.bundleGatewayUrl,
+        accessToken: this.modelProfile?.accessToken,
       },
     )
+    this.#skillProvider = skillProviderRegistration?.provider
     this.#skillProviderDispose = skillProviderRegistration?.dispose
     this.#skillResourceToolDispose = skillProviderRegistration === undefined
       ? undefined
@@ -253,6 +260,7 @@ export class KernelRuntime {
   refreshModelCredential(credential) {
     if (this.#modelAdapter === undefined) throw new Error('runtime does not use MOVO Model Gateway')
     this.#modelAdapter.updateCredential(credential)
+    this.#skillProvider?.materializer?.updateCredential(credential.accessToken)
     return { refreshed: true }
   }
 
@@ -323,6 +331,17 @@ export class KernelRuntime {
   async unloadPlugin(specifier) {
     return this.#plugins.unload(specifier)
   }
+
+  async managedPluginList() {
+    return {
+      ...(await this.#managedPlugins.list()),
+      globalTools: this.#ctx.tools.schemas().map(tool => tool.name),
+    }
+  }
+  managedPluginInspect(spec, registry) { return this.#managedPlugins.inspect(spec, registry) }
+  managedPluginInstall(spec, options) { return this.#managedPlugins.install(spec, options) }
+  managedPluginEnable(name, enabled) { return this.#managedPlugins.enable(name, enabled) }
+  managedPluginRemove(name) { return this.#managedPlugins.remove(name) }
 
   pluginInventory() {
     return {

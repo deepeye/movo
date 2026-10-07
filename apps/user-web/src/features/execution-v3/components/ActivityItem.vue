@@ -38,7 +38,8 @@ const text = computed(() => {
     return String(payload.label || '')
   }
   if (props.item.kind === 'tool') {
-    return toolDisplayName(props.item) || t(toolActionLabelKey(props.item))
+    const name = toolDisplayName(props.item)
+    return name ? t('execution.v3.tool_call_named', { name }) : t(toolActionLabelKey(props.item))
   }
   if (props.item.kind === 'subagent') return String(payload.goal || payload.summary || '')
   if (props.item.kind === 'approval') {

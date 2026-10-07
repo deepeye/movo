@@ -11,7 +11,9 @@ from .models import RuntimeProfileSnapshot
 class RuntimeProfileBundle:
     @staticmethod
     def export(snapshot: RuntimeProfileSnapshot) -> bytes:
-        document = snapshot.model_dump(mode="json")
+        document = snapshot.model_dump(
+            mode="json", exclude={"plugins", "plugin_versions"} if not snapshot.plugins else None,
+        )
         return json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2).encode("utf-8")
 
     @staticmethod

@@ -107,6 +107,8 @@ async def request_logging_middleware(request, call_next):
 from app.api.endpoints import (
     auth,
     dsh_chat,
+    dsh_plugins,
+    dsh_plugin_archives,
     dsh_skill_bundles,
     debug,
     documents,
@@ -152,6 +154,8 @@ app.include_router(sessions.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(skills.router, prefix="/api")
 app.include_router(skill_package_install.router, prefix="/api")
+app.include_router(dsh_plugins.router, prefix="/api")
+app.include_router(dsh_plugin_archives.router)
 app.include_router(skill_lifecycle.router, prefix="/api")
 app.include_router(skill_updates.router, prefix="/api")
 app.include_router(skill_share_direct.router, prefix="/api")

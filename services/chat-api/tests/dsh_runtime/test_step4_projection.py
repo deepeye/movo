@@ -7,6 +7,7 @@ from app.dsh_runtime.events import KernelEventProjector
 from app.dsh_runtime.event_mapper import DshEventMapper
 from app.dsh_runtime.profile.models import RuntimeProfileSnapshot
 from app.dsh_runtime.profile.store import InMemoryRuntimeProfileStore
+from app.dsh_runtime.events.tool_presentation import tool_presentations
 
 
 def _event(event_type: str, payload: dict, cursor: int = 1) -> KernelEventEnvelope:
@@ -37,6 +38,28 @@ def _profile(version: str, model: str) -> RuntimeProfileSnapshot:
         display_name=model,
         capabilities=("chat",),
     )
+
+
+def test_unique_plugin_tool_name_is_presented_in_started_and_completed_events() -> None:
+    profile = _profile("profile-a", "model").model_copy(update={
+        "plugins": ({"name": "dsh-plugin-doctor", "tool_names": ["plugin_doctor"]},),
+    })
+    presentations = tool_presentations(profile)
+    assert presentations["plugin_doctor"]["plugin_name"] == "dsh-plugin-doctor"
+    projector = KernelEventProjector()
+    started = projector.project(
+        _event("tool.call.started", {"callId": "call-doctor", "name": "plugin_doctor"}),
+        message_id="message-a", tool_presentations=presentations,
+    )
+    completed = projector.project(
+        _event("tool.call.completed", {"message": {"source": {"callId": "call-doctor"}, "content": [{
+            "type": "tool-result", "toolCallId": "call-doctor", "isError": False,
+            "content": [{"type": "text", "text": "checked"}],
+        }]}}),
+        message_id="message-a", tool_presentations=presentations,
+    )
+    assert started and started["payload"]["plugin_name"] == "dsh-plugin-doctor"
+    assert completed and completed["payload"]["plugin_name"] == "dsh-plugin-doctor"
 
 
 def test_projects_only_stable_v3_answer_and_terminal_fields() -> None:

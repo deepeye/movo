@@ -27,6 +27,7 @@ from app.dsh_runtime.events.turn_channel import TurnEventRegistry
 from app.dsh_runtime.gateway import DshAgentKernelGateway
 from app.dsh_runtime.locale import resolve_turn_locale
 from app.dsh_runtime.profile.service import RuntimeProfilePublisher
+from app.dsh_runtime.plugin_management.invocation import PluginInvocationRecorder
 from app.dsh_runtime.profile.synchronizer import ConversationProfileSynchronizer
 from app.dsh_runtime.runtime_coordinator import RuntimeCoordinator
 from app.dsh_runtime.session_access import (
@@ -114,6 +115,7 @@ class DshChatService:
             turn_events=turn_events,
             execution_evidence=execution_evidence,
             authoritative_deliveries=authoritative_deliveries,
+            plugin_invocations=PluginInvocationRecorder(),
         )
         self._tasks: dict[str, asyncio.Task[str]] = {}
         self._turn_outcomes: dict[str, str] = {}

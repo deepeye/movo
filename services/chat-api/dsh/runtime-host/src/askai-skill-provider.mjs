@@ -7,11 +7,11 @@ export class AskaiSkillProvider {
   #skills
   #byName
 
-  constructor(skillProfile, { storageRoot, bundleGatewayUrl = '' } = {}) {
+  constructor(skillProfile, { storageRoot, bundleGatewayUrl = '', accessToken = '' } = {}) {
     this.name = PROVIDER_NAME
     this.#skills = Object.freeze([...(skillProfile?.skills ?? [])].map(skill => Object.freeze(structuredClone(skill))))
     this.#byName = new Map(this.#skills.map(skill => [skill.name, skill]))
-    this.materializer = storageRoot === undefined ? undefined : new SkillBundleMaterializer(storageRoot, { bundleGatewayUrl })
+    this.materializer = storageRoot === undefined ? undefined : new SkillBundleMaterializer(storageRoot, { bundleGatewayUrl, accessToken })
   }
 
   async list() {

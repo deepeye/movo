@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-export type DesktopPrimarySection = 'home' | 'scheduled' | 'skills' | 'tools' | 'knowledge'
+export type DesktopPrimarySection = 'home' | 'scheduled' | 'skills' | 'plugins' | 'tools' | 'knowledge'
 
 interface NavigationItem {
   id: DesktopPrimarySection
@@ -46,6 +46,7 @@ const items = computed<NavigationItem[]>(() => [
   { id: 'home', zh: '首页', en: 'Home', visible: true, badge: 0 },
   { id: 'scheduled', zh: '定时', en: 'Tasks', visible: true, badge: 0 },
   { id: 'skills', zh: 'Skill', en: 'Skills', visible: props.skillsAvailable, badge: props.skillBadge },
+  { id: 'plugins', zh: '插件', en: 'Plugins', visible: true, badge: 0 },
   { id: 'tools', zh: 'MCP', en: 'MCP', visible: props.toolsAvailable, badge: 0 },
   { id: 'knowledge', zh: '知识库', en: 'Knowledge Base', visible: props.knowledgeAvailable, badge: props.knowledgeBadge },
 ])
@@ -69,6 +70,7 @@ const items = computed<NavigationItem[]>(() => [
           <svg v-if="item.id === 'home'" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></svg>
           <svg v-else-if="item.id === 'scheduled'" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           <svg v-else-if="item.id === 'skills'" viewBox="0 0 24 24"><path d="m12 3 1.35 3.65L17 8l-3.65 1.35L12 13l-1.35-3.65L7 8l3.65-1.35L12 3Z"/><path d="m5 13 .9 2.1L8 16l-2.1.9L5 19l-.9-2.1L2 16l2.1-.9L5 13Zm14-1 .9 2.1 2.1.9-2.1.9L19 18l-.9-2.1L16 15l2.1-.9L19 12Z"/></svg>
+          <svg v-else-if="item.id === 'plugins'" viewBox="0 0 24 24"><path d="M8 3h8v4h4v5h-4v3h4v6H4v-6h4v-3H4V7h4V3Z"/><path d="M8 7h8M8 15h8"/></svg>
           <svg v-else-if="item.id === 'tools'" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="7" r="2"/><circle cx="20" cy="7" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="m6 8 3.5 2.5M18 8l-3.5 2.5M7 18l3-3.5m7 3.5-3-3.5"/></svg>
           <svg v-else class="desktop-primary-nav__knowledge-icon" viewBox="0 0 512 512">
             <rect x="32" y="96" width="64" height="368" rx="16" ry="16" />

@@ -58,7 +58,7 @@ class DeterministicBridge(BaseHTTPRequestHandler):
             self._ndjson(self._answer_events(scenario.id))
             return
         assert scenario.model_tool_name in {tool["name"] for tool in payload.get("tools") or []}
-        if self._current_turn_has_result(payload):
+        if self._current_turn_has_result(payload, scenario.id):
             self._ndjson(self._answer_events(scenario.id))
             return
         self._ndjson([
@@ -84,12 +84,16 @@ class DeterministicBridge(BaseHTTPRequestHandler):
         return BY_ID[self.scenario_by_session[session_id]]
 
     @staticmethod
-    def _current_turn_has_result(payload: dict[str, Any]) -> bool:
+    def _current_turn_has_result(payload: dict[str, Any], scenario_id: str) -> bool:
+        call_id = f"call-{scenario_id}"
         return any(
-            block.get("type") == "tool-result"
+            (message.get("role") == "tool" and message.get("source", {}).get("callId") == call_id)
+            or any(
+                isinstance(block, dict) and block.get("type") == "tool-result"
+                for block in list(message.get("content") or [])
+            )
             for message in list(payload.get("messages") or [])
-            for block in list(message.get("content") or [])
-            if isinstance(block, dict)
+            if isinstance(message, dict)
         )
 
     @staticmethod

@@ -10,6 +10,7 @@ from .catalog import ModelCatalog
 from .models import RuntimeProfileSnapshot
 from .tools import ToolProfileCompiler
 from .skills import SkillProfileCompiler
+from .plugins import MongoPluginCatalog, plugin_versions
 
 
 class ModelProfileCompiler:
@@ -19,11 +20,13 @@ class ModelProfileCompiler:
         tool_compiler: ToolProfileCompiler | None = None,
         skill_compiler: SkillProfileCompiler | None = None,
         model_access_policy: Any | None = None,
+        plugin_catalog: MongoPluginCatalog | None = None,
     ) -> None:
         self._catalog = catalog
         self._tool_compiler = tool_compiler
         self._skill_compiler = skill_compiler
         self._model_access_policy = model_access_policy
+        self._plugin_catalog = plugin_catalog
 
     async def compile(
         self,
@@ -50,6 +53,7 @@ class ModelProfileCompiler:
         skill_profile = await self._skill_compiler.compile(
             tenant_id=tenant_id, user_id=user_id, tools=tools,
         ) if self._skill_compiler else None
+        plugins = await self._plugin_catalog.list_enabled(tenant_id, user_id) if self._plugin_catalog else ()
         payload: dict[str, Any] = {
             "schema_version": "askai.runtime-profile.v1",
             "tenant_id": tenant_id,
@@ -72,8 +76,10 @@ class ModelProfileCompiler:
             "workflow_versions": tuple(
                 item.version for item in (skill_profile.skills if skill_profile else ()) if item.kind == "workflow"
             ),
-            "plugin_versions": (),
         }
+        if plugins:
+            payload["plugins"] = plugins
+            payload["plugin_versions"] = plugin_versions(plugins)
         content_hash = self.content_hash(payload)
         return RuntimeProfileSnapshot(
             **payload,

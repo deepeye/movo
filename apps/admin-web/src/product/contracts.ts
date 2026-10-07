@@ -47,6 +47,7 @@ export interface AdminProductUiExtension {
   modelAccess?: ModelAccessUiExtension
   skillAccess?: ResourceAccessUiExtension
   toolAccess?: ResourceAccessUiExtension
+  pluginAccess?: ResourceAccessUiExtension
   menuGroups?: AdminProductMenuGroup[]
   routes?: RouteRecordRaw[]
 }

@@ -4,11 +4,15 @@ import { validBearerToken, assertSecureHost } from './host-auth.mjs'
 import { runtimeHealth } from './host-protocol.mjs'
 import { readJson, routeParts, sendJson } from './http-utils.mjs'
 import { RuntimeManager } from './runtime-manager.mjs'
-import { resolveSessionSeed } from './session-seed.mjs'
+import { IsolatedPluginRuntimePool } from './isolated-plugin-runtime.mjs'
+import { admitSessionBody } from './session-admission.mjs'
+import { PluginArchiveMaterializer } from './plugin-archive-materializer.mjs'
 
 export class RuntimeHttpServer {
   #server
   #manager
+  #isolated
+  #pluginArchives
   #started = false
 
   constructor({ host = '127.0.0.1', port = 0, storageRoot, authToken = '' }) {
@@ -19,6 +23,8 @@ export class RuntimeHttpServer {
     this.port = port
     this.authToken = authToken
     this.#manager = new RuntimeManager({ storageRoot })
+    this.#isolated = new IsolatedPluginRuntimePool(storageRoot)
+    this.#pluginArchives = new PluginArchiveMaterializer(storageRoot)
     this.#server = createServer((request, response) => {
       if (!validBearerToken(request.headers.authorization, this.authToken)) {
         response.setHeader('www-authenticate', 'Bearer realm="askai-dsh-runtime"')
@@ -26,6 +32,8 @@ export class RuntimeHttpServer {
         return
       }
       this.#dispatch(request, response).catch(error => {
+        if (response.destroyed || response.writableEnded) return
+        if (response.headersSent) { response.destroy(error); return }
         sendJson(response, 400, {
           error: {
             code: 'kernel_request_failed',
@@ -61,6 +69,7 @@ export class RuntimeHttpServer {
     if (!this.#started) return
     this.#started = false
     const closed = new Promise(resolvePromise => this.#server.close(() => resolvePromise()))
+    await this.#isolated.disposeAll()
     await this.#manager.disposeAll()
     this.#server.closeAllConnections()
     await closed
@@ -69,10 +78,19 @@ export class RuntimeHttpServer {
   async #dispatch(request, response) {
     const { parts, query } = routeParts(request)
     if (request.method === 'GET' && parts.join('/') === 'health') {
-      return sendJson(response, 200, runtimeHealth(this.#manager.inventory()))
+      return sendJson(response, 200, runtimeHealth([...this.#manager.inventory(), ...this.#isolated.inventory()]))
+    }
+    if (request.method === 'POST' && parts.join('/') === 'v1/plugin-archives/materialize') {
+      const body = await readJson(request)
+      const spec = await this.#pluginArchives.materialize(body)
+      return sendJson(response, 200, { spec })
     }
     if (request.method === 'POST' && parts.join('/') === 'v1/runtimes') {
-      const runtime = await this.#manager.create(await readJson(request))
+      const body = await readJson(request)
+      body.modelProfile = await this.#pluginArchives.prepareProfile(body.modelProfile)
+      const runtime = body.modelProfile?.plugins?.length && process.env.MOVO_DSH_PLUGIN_CHILD !== '1'
+        ? await this.#isolated.create(body)
+        : await this.#manager.create(body)
       const health = runtimeHealth([])
       return sendJson(response, 201, {
         runtimeId: runtime.runtimeId,
@@ -84,20 +102,42 @@ export class RuntimeHttpServer {
     }
     if (request.method === 'GET' && parts.join('/') === 'v1/runtimes') {
       const isolationKey = query.get('isolationKey')
-      if (isolationKey === null) return sendJson(response, 200, { runtimes: this.#manager.inventory() })
-      const runtime = this.#manager.findByIsolation(isolationKey)
+      if (isolationKey === null) return sendJson(response, 200, { runtimes: [...this.#manager.inventory(), ...this.#isolated.inventory()] })
+      const runtime = this.#manager.findByIsolation(isolationKey) ?? this.#isolated.findByIsolation(isolationKey)
       return sendJson(response, 200, { runtime: runtime === undefined ? null : this.#manager.describe(runtime) })
     }
     if (parts[0] !== 'v1' || parts[1] !== 'runtimes' || parts[2] === undefined) {
       return sendJson(response, 404, { error: { code: 'not_found', message: 'route not found' } })
     }
     const runtimeId = parts[2]
+    const isolated = this.#isolated.get(runtimeId)
+    if (isolated !== undefined) {
+      if (request.method === 'DELETE' && parts.length === 3) {
+        await this.#isolated.dispose(runtimeId, { purge: query.get('purge') === '1' })
+        return sendJson(response, 200, { disposed: true })
+      }
+      if (request.method === 'POST' && parts[3] === 'sessions' && parts.length === 4) {
+        const body = await admitSessionBody(await readJson(request), this.#seedSource())
+        return sendJson(response, 201, await this.#isolated.createSession(isolated, body))
+      }
+      return await this.#isolated.forward(isolated, request, response)
+    }
     if (request.method === 'DELETE' && parts.length === 3) {
-      await this.#manager.dispose(runtimeId)
+      await this.#manager.dispose(runtimeId, { purge: query.get('purge') === '1' })
       return sendJson(response, 200, { disposed: true })
     }
     const runtime = this.#manager.get(runtimeId)
     if (request.method === 'GET' && parts.length === 3) return sendJson(response, 200, this.#manager.describe(runtime))
+    if (process.env.MOVO_DSH_PLUGIN_CHILD === '1' && request.method === 'POST' &&
+        parts[3] === 'seed-export' && parts.length === 4) {
+      const { sessionId } = await readJson(request)
+      return sendJson(response, 200, { seed: await runtime.exportCompletedSeed(sessionId) })
+    }
+    if (process.env.MOVO_DSH_PLUGIN_CHILD === '1' && request.method === 'POST' &&
+        parts[3] === 'trusted-session' && parts.length === 4) {
+      const body = await admitSessionBody(await readJson(request), this.#manager, { trusted: true })
+      return sendJson(response, 201, await runtime.createSession(body))
+    }
     if (parts[3] === 'workspaces') {
       if (request.method === 'GET' && parts.length === 4) {
         return sendJson(response, 200, { workspaces: await runtime.listWorkspaces() })
@@ -119,16 +159,7 @@ export class RuntimeHttpServer {
       return sendJson(response, 200, runtime.refreshToolCredential(await readJson(request)))
     }
     if (request.method === 'POST' && parts[3] === 'sessions' && parts.length === 4) {
-      let body = await readJson(request)
-      if (Object.hasOwn(body, 'cwd')) throw new Error('raw cwd is forbidden over the Runtime Host API; use workspaceId')
-      body = await resolveSessionSeed(this.#manager, body)
-      if (body.presetId === 'code') {
-        if (body.workspaceId === undefined) throw new Error('Code Session requires a DSH workspaceId')
-        if (body.permissionPreset !== undefined && body.permissionPreset !== 'workspace-write') {
-          throw new Error('desktop Code Session permissionPreset exceeds MOVO policy')
-        }
-        body.permissionPreset = 'workspace-write'
-      }
+      const body = await admitSessionBody(await readJson(request), this.#seedSource())
       return sendJson(response, 201, await runtime.createSession(body))
     }
     if (parts[3] === 'sessions' && parts[4] !== undefined) {
@@ -194,6 +225,32 @@ export class RuntimeHttpServer {
       if (request.method === 'POST' && parts[4] === 'probe') return sendJson(response, 200, await runtime.probePlugin(body.specifier))
       if (request.method === 'POST' && parts[4] === 'unload') return sendJson(response, 200, await runtime.unloadPlugin(body.specifier))
     }
+    if (parts[3] === 'managed-plugins') {
+      if (request.method === 'GET' && parts.length === 4) {
+        return sendJson(response, 200, await runtime.managedPluginList())
+      }
+      const body = await readJson(request)
+      if (request.method === 'POST' && parts[4] === 'inspect' && parts.length === 5) {
+        return sendJson(response, 200, await runtime.managedPluginInspect(body.spec, body.registry))
+      }
+      if (request.method === 'POST' && parts[4] === 'install' && parts.length === 5) {
+        return sendJson(response, 200, await runtime.managedPluginInstall(body.spec, body))
+      }
+      if (request.method === 'POST' && parts[4] === 'enable' && parts.length === 5) {
+        return sendJson(response, 200, await runtime.managedPluginEnable(body.name, body.enabled))
+      }
+      if (request.method === 'POST' && parts[4] === 'remove' && parts.length === 5) {
+        return sendJson(response, 200, await runtime.managedPluginRemove(body.name))
+      }
+    }
     return sendJson(response, 404, { error: { code: 'not_found', message: 'route not found' } })
+  }
+
+  #seedSource() {
+    return {
+      exportCompletedSeed: async (runtimeId, sessionId) => this.#isolated.get(runtimeId)
+        ? await this.#isolated.exportCompletedSeed(runtimeId, sessionId)
+        : await this.#manager.exportCompletedSeed(runtimeId, sessionId),
+    }
   }
 }

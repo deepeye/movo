@@ -352,7 +352,9 @@ test('official DSH bounds foreground timeout and large command output', async ()
     const observation = JSON.stringify(modelCalls.slice(1))
     assert.match(observation, /truncat|full output|saved to/i)
     assert.match(observation, /timeout|timed out|BASH_TIMEOUT/i)
-    const toolText = modelCalls[1].messages.at(-1).content[0].content[0].text
+    const toolText = modelCalls[1].messages.at(-1).content
+      .map(part => part.text ?? part.content?.map(nested => nested.text ?? '').join('') ?? '')
+      .join('')
     assert.match(toolText, /"truncated": true|Omitted \d+ bytes\. Full formatted result stored at:/)
     assert.ok(toolText.length <= 50_000, `bounded command result contains ${toolText.length} characters`)
   } finally {

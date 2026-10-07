@@ -19,6 +19,8 @@ from app.dsh_runtime.profile.catalog import MongoModelCatalog
 from app.dsh_runtime.profile.compiler import ModelProfileCompiler
 from app.dsh_runtime.profile.tools import MongoToolCatalog, ToolProfileCompiler
 from app.dsh_runtime.profile.skills import MongoSkillCatalog, SkillProfileCompiler
+from app.dsh_runtime.profile.plugins import MongoPluginCatalog
+from app.dsh_runtime.plugin_management.repository import PluginInstallationRepository
 from app.dsh_runtime.profile.resolver import RuntimeProfileResolver
 from app.dsh_runtime.profile.service import RuntimeProfilePublisher
 from app.dsh_runtime.profile.store import MongoRuntimeProfileStore
@@ -66,10 +68,14 @@ class DshRuntimeApplication:
             tool_token_service=ToolGatewayTokenService(secret),
             tool_gateway_url=settings.DSH_TOOL_GATEWAY_URL,
             bundle_gateway_url=settings.DSH_TOOL_GATEWAY_URL.removesuffix("/tools") + "/skill-bundles",
+            plugin_gateway_url=settings.DSH_TOOL_GATEWAY_URL.removesuffix("/tools") + "/plugin-archives",
         )
         self._transport = HttpKernelHostTransport(
             settings.DSH_RUNTIME_HOST_URL,
             timeout_seconds=settings.DSH_RUNTIME_HTTP_TIMEOUT_SECONDS,
+            # A full tenant Profile can take longer than the transport's
+            # default minute to boot when many Skills and plugins are present.
+            startup_timeout_seconds=300,
             access_token=settings.DSH_RUNTIME_HOST_TOKEN,
         )
         try:
@@ -92,6 +98,7 @@ class DshRuntimeApplication:
         employee_policy = MongoEmployeePolicyResolver()
         internal_capabilities = InternalCapabilityService(build_default_registry())
         await store.ensure_indexes()
+        await PluginInstallationRepository().ensure_indexes()
         await conversations.ensure_indexes()
         await bindings.ensure_indexes()
         await events.ensure_indexes()
@@ -117,6 +124,7 @@ class DshRuntimeApplication:
                 ToolProfileCompiler(MongoToolCatalog(), internal_catalog, employee_policy),
                 SkillProfileCompiler(MongoSkillCatalog()),
                 get_product_extension().model_access_policy,
+                MongoPluginCatalog(),
             ),
             store,
         )

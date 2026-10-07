@@ -22,6 +22,10 @@ image tags. Do not publish a release while an item in
 2. Update `CHANGELOG.md` and choose a semantic version such as `v0.1.0-rc.1`.
 3. Run all required checks and the manual container workflow on the exact
    candidate commit.
+   Execute the [user browser release cases](browser-release-cases.zh-CN.md)
+   against that candidate deployment and require a passing report before
+   tagging. The [automated browser smoke test](browser-release-e2e.md) adds
+   repeatable evidence for the basic conversation path.
 4. On fresh amd64 and arm64 hosts, clone the tag, set `MOVO_VERSION` to that
    tag, run `./movo up`, complete setup, and exercise chat, document parsing,
    knowledge retrieval and presentation generation.

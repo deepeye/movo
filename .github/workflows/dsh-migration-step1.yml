@@ -47,7 +47,7 @@ jobs:
           cache-dependency-path: services/chat-api/requirements.txt
       - uses: pnpm/action-setup@v4
         with:
-          version: "10.14.0"
+          version: "11.25.0"
       - uses: actions/setup-node@v4
         with:
           node-version: "24.19.0"
@@ -80,10 +80,11 @@ jobs:
       - name: Verify pinned artifact and license
         working-directory: services/chat-api
         run: |
+          DSH_VERSION=$(python -c 'import yaml; print(yaml.safe_load(open("dsh/compatibility-matrix.yaml"))["active_release"]["dsh_release_train"])')
           curl --fail --location --silent --show-error \
-            --output /tmp/dsh-0.1.6-alpha.1.tgz \
-            https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.1.6-alpha.1.tgz
-          python scripts/check_dsh_supply_chain.py --artifact /tmp/dsh-0.1.6-alpha.1.tgz
+            --output "/tmp/dsh-${DSH_VERSION}.tgz" \
+            "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-${DSH_VERSION}.tgz"
+          python scripts/check_dsh_supply_chain.py --artifact "/tmp/dsh-${DSH_VERSION}.tgz"
       - name: Reject copied or patched upstream core
         run: |
           test ! -d services/chat-api/dsh/packages
@@ -104,7 +105,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: "10.14.0"
+          version: "11.25.0"
       - uses: actions/setup-node@v4
         with:
           node-version: "24.19.0"
