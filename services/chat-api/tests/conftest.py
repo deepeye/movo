@@ -8,7 +8,7 @@ against a real server:
 
 - MongoDB >= 3.2 is required for ``partialFilterExpression`` indexes
   (``app/dsh_runtime/bindings/repository.py`` relies on one). The repo pins
-  pymongo 3.12.3 / motor 2.5.1, both of which support
+  pymongo 4.18.2 / motor 3.7.1, both of which support
   ``partialFilterExpression``. The local deployment pins ``mongo:6.0.20``
   (docker-compose.yml).
 
@@ -33,7 +33,7 @@ Semantics
   (``movo_test_<uuid>``), which is dropped on teardown. Tests can never
   observe each other's rows and no database outside the ``movo_test_``
   prefix is ever touched.
-- motor 2.5.1 pins the event loop at client creation, so the fixture creates
+- Motor binds to the event loop at client creation, so the fixture creates
   a dedicated loop per test and binds the motor client to it. Drive async
   repository/service code through ``harness.run(...)``, not
   ``asyncio.run(...)`` — the client's futures would otherwise be attached to
@@ -132,7 +132,7 @@ def real_mongo_db():
             _warmup_ping(lambda: loop.run_until_complete(db.command("ping")))
             yield RealMongoHarness(db=db, loop=loop, name=name, uri=uri)
         finally:
-            # AsyncIOMotorClient.close() is a synchronous delegate in motor 2.5.1.
+            # AsyncIOMotorClient.close() is a synchronous delegate.
             client.close()
             loop.close()
             admin.drop_database(name)

@@ -8,7 +8,11 @@ overrides:
   fast-uri: 3.1.7
   undici: 8.10.2
   js-yaml: 4.3.2
-  sharp: 0.35.4
+  sharp: 0.35.5
+  '@modelcontextprotocol/client': 2.2.0
+  '@modelcontextprotocol/sdk': 1.31.0
+  compression: 1.8.2
+  proxy-addr: 2.0.8
 minimumReleaseAgeExclude:
   - '@deepseek-ai/cordis-plugin-group@1.0.2'
   - '@deepseek-ai/cordis-plugin-hmr@1.0.17'

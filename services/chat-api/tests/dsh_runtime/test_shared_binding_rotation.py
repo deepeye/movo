@@ -307,7 +307,7 @@ def test_partial_unique_index_shape_is_unchanged(shared_thread):
     harness, _ids, _session_oid, _gateway, _chat, _profiles = shared_thread
     info = harness.run(harness.db.agent_kernel_bindings.index_information())
     index = info["one_current_kernel_binding_per_conversation"]
-    # index_information()'s key is a LIST of tuples on pymongo 3.12.3 (T03's
+    # index_information()'s key is a LIST of tuples (T03's
     # SON-vs-list gotcha, in reverse: never assert it against a plain dict).
     assert index["key"] == [("tenant_id", 1), ("conversation_id", 1)]
     assert index["partialFilterExpression"] == {"current": True}

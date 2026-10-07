@@ -9,7 +9,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 RUN if [ -n "${MOVO_NPM_REGISTRY}" ]; then npm config set registry "${MOVO_NPM_REGISTRY}"; fi \
-    && npm install --global pnpm@11.25.0
+    && npm install --global pnpm@11.28.5
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
