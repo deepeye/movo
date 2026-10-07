@@ -59,7 +59,7 @@ supported_releases:
     host_protocol: askai.dsh-host.v1
     host_overlay: askai-dsh-host-v1
     old_session_resume: verified
-    status: rollback
+    status: legacy
   - dsh_release_train: 0.1.1-rc.2
     node_runtime: "^22.19.0 || >=24.0.0"
     host_protocol: askai.dsh-host.v1
