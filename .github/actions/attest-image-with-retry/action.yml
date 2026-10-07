@@ -1,0 +1,44 @@
+name: Attest image with retry
+description: Persist public image provenance, retrying transient GitHub or registry failures.
+inputs:
+  subject-name:
+    description: OCI image name
+    required: true
+  subject-digest:
+    description: OCI image digest
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Attest image (attempt 1/3)
+      id: first
+      uses: actions/attest-build-provenance@v3
+      continue-on-error: true
+      with:
+        subject-name: ${{ inputs.subject-name }}
+        subject-digest: ${{ inputs.subject-digest }}
+        push-to-registry: true
+    - name: Back off before attempt 2/3
+      if: ${{ steps.first.outcome == 'failure' }}
+      shell: bash
+      run: sleep 15
+    - name: Attest image (attempt 2/3)
+      id: second
+      if: ${{ steps.first.outcome == 'failure' }}
+      uses: actions/attest-build-provenance@v3
+      continue-on-error: true
+      with:
+        subject-name: ${{ inputs.subject-name }}
+        subject-digest: ${{ inputs.subject-digest }}
+        push-to-registry: true
+    - name: Back off before attempt 3/3
+      if: ${{ steps.first.outcome == 'failure' && steps.second.outcome == 'failure' }}
+      shell: bash
+      run: sleep 30
+    - name: Attest image (attempt 3/3)
+      if: ${{ steps.first.outcome == 'failure' && steps.second.outcome == 'failure' }}
+      uses: actions/attest-build-provenance@v3
+      with:
+        subject-name: ${{ inputs.subject-name }}
+        subject-digest: ${{ inputs.subject-digest }}
+        push-to-registry: true

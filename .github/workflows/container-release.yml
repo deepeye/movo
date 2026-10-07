@@ -161,13 +161,6 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.suffix }}
           provenance: mode=max
           sbom: true
-      - name: Attest public image provenance
-        if: ${{ github.event.repository.visibility == 'public' }}
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ steps.image.outputs.name }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
       - name: Scan candidate image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
@@ -176,6 +169,12 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           severity: CRITICAL,HIGH
+      - name: Attest public image provenance
+        if: ${{ github.event.repository.visibility == 'public' }}
+        uses: ./.github/actions/attest-image-with-retry
+        with:
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
 
   promote-release:
     needs: [plan-release, publish-candidates]

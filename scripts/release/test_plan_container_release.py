@@ -62,9 +62,25 @@ class ContainerReleasePlanTests(unittest.TestCase):
         workflow = (REPOSITORY_ROOT / ".github/workflows/container-release.yml").read_text()
         self.assertIn(
             "if: ${{ github.event.repository.visibility == 'public' }}\n"
-            "        uses: actions/attest-build-provenance@v3",
+            "        uses: ./.github/actions/attest-image-with-retry",
             workflow,
         )
+
+    def test_attestation_retries_without_weakening_the_scan_gate(self):
+        workflow = (REPOSITORY_ROOT / ".github/workflows/container-release.yml").read_text()
+        action = (
+            REPOSITORY_ROOT / ".github/actions/attest-image-with-retry/action.yml"
+        ).read_text()
+        self.assertLess(
+            workflow.index("- name: Scan candidate image"),
+            workflow.index("- name: Attest public image provenance"),
+        )
+        self.assertEqual(3, action.count("uses: actions/attest-build-provenance@v3"))
+        self.assertEqual(2, action.count("continue-on-error: true"))
+        self.assertIn("steps.first.outcome == 'failure'", action)
+        self.assertIn("steps.second.outcome == 'failure'", action)
+        self.assertIn("- name: Attest image (attempt 3/3)", action)
+        self.assertEqual(3, action.count("push-to-registry: true"))
 
     def test_release_scans_candidates_before_publishing_public_tags(self):
         workflow = (REPOSITORY_ROOT / ".github/workflows/container-release.yml").read_text()
