@@ -131,7 +131,7 @@ assert.match(desktopChrome, /compact-navigation:not\(\.desktop-window-chrome--wi
 assert.match(desktopChrome, /--windows\.desktop-window-chrome--compact-navigation \.desktop-window-chrome__brand \{/)
 assert.match(desktopChrome, /windowsTitleBar && \(navigationWidth \|\| 260\) <= 64 \? 'MOVO' : ''/)
 assert.match(desktopChrome, /:global\(html\.theme-dark \.desktop-window-chrome__content\)/)
-assert.match(desktopPrimaryNavigation, /'home' \| 'scheduled' \| 'skills' \| 'tools' \| 'knowledge'/)
+assert.match(desktopPrimaryNavigation, /'home' \| 'scheduled' \| 'skills' \| 'plugins' \| 'tools' \| 'knowledge'/)
 assert.match(desktopPrimaryNavigation, /:aria-current=/)
 assert.match(desktopPrimaryNavigation, /@click="emit\('navigate', item\.id\)"/)
 assert.match(desktopPrimaryNavigation, /:data-tooltip=/)

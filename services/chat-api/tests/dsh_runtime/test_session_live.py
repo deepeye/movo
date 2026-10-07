@@ -2176,6 +2176,7 @@ def test_t3_restart_sweep_finalizes_orphaned_claim_and_admits_next_send(
     from app.dsh_runtime.application import DshRuntimeApplication
     from app.dsh_runtime.gateway import DshAgentKernelGateway
     from app.dsh_runtime.profile.store import MongoRuntimeProfileStore
+    from app.dsh_runtime.plugin_management.repository import PluginInstallationRepository
     from app.dsh_runtime.transport import HttpKernelHostTransport
     from app.enterprise_capabilities.delivery import AuthoritativeDeliveryRepository
     from app.enterprise_capabilities.tools import EnterpriseToolRepository
@@ -2203,6 +2204,7 @@ def test_t3_restart_sweep_finalizes_orphaned_claim_and_admits_next_send(
     monkeypatch.setattr(DshAgentKernelGateway, "resume_session", noop_async)
     monkeypatch.setattr(DshAgentKernelGateway, "events_once", no_such_session)
     monkeypatch.setattr(MongoRuntimeProfileStore, "ensure_indexes", noop_async)
+    monkeypatch.setattr(PluginInstallationRepository, "ensure_indexes", noop_async)
     monkeypatch.setattr(EnterpriseToolRepository, "ensure_indexes", noop_async)
     monkeypatch.setattr(PresentationJobRepository, "ensure_indexes", noop_async)
     monkeypatch.setattr(PresentationJobRepository, "recover_running", noop_async)

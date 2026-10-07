@@ -75,8 +75,11 @@ class _BridgeHandler(BaseHTTPRequestHandler):
         session_id = str(payload.get("sessionId") or "")
         messages = list(payload.get("messages") or [])
         has_result = any(
-            isinstance(block, dict) and block.get("type") == "tool-result"
-            for message in messages for block in list(message.get("content") or [])
+            message.get("role") == "tool" or any(
+                isinstance(block, dict) and block.get("type") == "tool-result"
+                for block in list(message.get("content") or [])
+            )
+            for message in messages
         )
         if has_result:
             return self._ndjson([
