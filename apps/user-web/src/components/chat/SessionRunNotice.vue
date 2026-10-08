@@ -36,7 +36,7 @@ const emit = defineEmits<{ (event: 'refresh'): void }>()
 </template>
 
 <style scoped>
-:global(html.theme-dark) .run-notice-active {
+:global(html.theme-dark .run-notice-active){
   background-color: rgba(245, 158, 11, 0.18);
   border-color: rgba(251, 191, 36, 0.45);
   color: #fef3c7;

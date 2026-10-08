@@ -161,7 +161,7 @@ function openFileByKeyboard(event: KeyboardEvent) {
 .assistant-markdown :deep(.assistant-file-reference:hover) { border-color:#9fc2ef; background:#e8f2ff; color:#164f91; }
 .assistant-markdown :deep(.assistant-file-reference:focus-visible) { outline:2px solid #3b82f6; outline-offset:2px; }
 
-:global(html.theme-dark) .assistant-markdown {
+:global(html.theme-dark .assistant-markdown){
   --assistant-code-bg: #0f172a;
   --assistant-code-header-bg: #182235;
   --assistant-code-border: #2a3850;
@@ -175,19 +175,19 @@ function openFileByKeyboard(event: KeyboardEvent) {
   --assistant-quote-border: #5c85b5;
   color: #e2eaf5;
 }
-:global(html.theme-dark) .assistant-markdown :deep(a) { color: #9dc8ff; }
-:global(html.theme-dark) .assistant-markdown :deep(a:hover) { color: #c5dfff; }
-:global(html.theme-dark) .assistant-markdown :deep(p), :global(html.theme-dark) .assistant-markdown :deep(li), :global(html.theme-dark) .assistant-markdown :deep(td), :global(html.theme-dark) .assistant-markdown :deep(blockquote) { color: #e2eaf5; }
-:global(html.theme-dark) .assistant-markdown :deep(h1), :global(html.theme-dark) .assistant-markdown :deep(h2), :global(html.theme-dark) .assistant-markdown :deep(h3), :global(html.theme-dark) .assistant-markdown :deep(h4), :global(html.theme-dark) .assistant-markdown :deep(strong), :global(html.theme-dark) .assistant-markdown :deep(th) { color: #f0f5fc; }
-:global(html.theme-dark) .assistant-markdown :deep(.hljs-keyword), :global(html.theme-dark) .assistant-markdown :deep(.hljs-selector-tag), :global(html.theme-dark) .assistant-markdown :deep(.hljs-literal) { color: #c4b5fd; }
-:global(html.theme-dark) .assistant-markdown :deep(.hljs-string), :global(html.theme-dark) .assistant-markdown :deep(.hljs-attr), :global(html.theme-dark) .assistant-markdown :deep(.hljs-template-variable) { color: #94dfb7; }
-:global(html.theme-dark) .assistant-markdown :deep(.hljs-comment), :global(html.theme-dark) .assistant-markdown :deep(.hljs-quote) { color: #a4b3c7; }
-:global(html.theme-dark) .assistant-markdown :deep(.hljs-number), :global(html.theme-dark) .assistant-markdown :deep(.hljs-built_in) { color: #f7bd88; }
-:global(html.theme-dark) .assistant-markdown :deep(.hljs-title), :global(html.theme-dark) .assistant-markdown :deep(.hljs-function), :global(html.theme-dark) .assistant-markdown :deep(.hljs-type), :global(html.theme-dark) .assistant-markdown :deep(.hljs-selector-class) { color: #a5c8ff; }
-:global(html.theme-dark) .assistant-markdown :deep(.hljs-variable), :global(html.theme-dark) .assistant-markdown :deep(.hljs-params) { color: #dce7f5; }
-:global(html.theme-dark) .assistant-markdown :deep(.assistant-inline-code) { border-color:#334155; background:#172033; color:#cbd5e1; }
-:global(html.theme-dark) .assistant-markdown :deep(.assistant-file-reference) { border-color:#294c78; background:#102542; color:#8ec5ff; }
-:global(html.theme-dark) .assistant-markdown :deep(.assistant-file-reference:hover) { border-color:#3b6fa8; background:#143052; color:#bfdbfe; }
+:global(html.theme-dark .assistant-markdown a){ color: #9dc8ff; }
+:global(html.theme-dark .assistant-markdown a:hover){ color: #c5dfff; }
+:global(html.theme-dark .assistant-markdown p), :global(html.theme-dark .assistant-markdown li), :global(html.theme-dark .assistant-markdown td), :global(html.theme-dark .assistant-markdown blockquote){ color: #e2eaf5; }
+:global(html.theme-dark .assistant-markdown h1), :global(html.theme-dark .assistant-markdown h2), :global(html.theme-dark .assistant-markdown h3), :global(html.theme-dark .assistant-markdown h4), :global(html.theme-dark .assistant-markdown strong), :global(html.theme-dark .assistant-markdown th){ color: #f0f5fc; }
+:global(html.theme-dark .assistant-markdown .hljs-keyword), :global(html.theme-dark .assistant-markdown .hljs-selector-tag), :global(html.theme-dark .assistant-markdown .hljs-literal){ color: #c4b5fd; }
+:global(html.theme-dark .assistant-markdown .hljs-string), :global(html.theme-dark .assistant-markdown .hljs-attr), :global(html.theme-dark .assistant-markdown .hljs-template-variable){ color: #94dfb7; }
+:global(html.theme-dark .assistant-markdown .hljs-comment), :global(html.theme-dark .assistant-markdown .hljs-quote){ color: #a4b3c7; }
+:global(html.theme-dark .assistant-markdown .hljs-number), :global(html.theme-dark .assistant-markdown .hljs-built_in){ color: #f7bd88; }
+:global(html.theme-dark .assistant-markdown .hljs-title), :global(html.theme-dark .assistant-markdown .hljs-function), :global(html.theme-dark .assistant-markdown .hljs-type), :global(html.theme-dark .assistant-markdown .hljs-selector-class){ color: #a5c8ff; }
+:global(html.theme-dark .assistant-markdown .hljs-variable), :global(html.theme-dark .assistant-markdown .hljs-params){ color: #dce7f5; }
+:global(html.theme-dark .assistant-markdown .assistant-inline-code){ border-color:#334155; background:#172033; color:#cbd5e1; }
+:global(html.theme-dark .assistant-markdown .assistant-file-reference){ border-color:#294c78; background:#102542; color:#8ec5ff; }
+:global(html.theme-dark .assistant-markdown .assistant-file-reference:hover){ border-color:#3b6fa8; background:#143052; color:#bfdbfe; }
 
 .assistant-markdown-compact {
   font-size: 14px;
