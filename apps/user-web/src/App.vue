@@ -309,6 +309,22 @@ const savedSidebarHistoryState = (() => {
   try { return JSON.parse(localStorage.getItem(sidebarHistoryStateKey) || '{}') as Record<string, any> } catch { return {} }
 })()
 const normalHistoryExpanded = ref(savedSidebarHistoryState.normal !== false)
+const sharedHistoryExpanded = ref(savedSidebarHistoryState.shared !== false)
+const pinnedHistoryExpanded = ref(savedSidebarHistoryState.pinnedExpanded !== false)
+const pinnedSessionIds = ref<string[]>([])
+const pinnedStorageKey = computed(() => {
+  const userId = userProfile.value?.userId
+  return userId == null ? '' : `askai.pinned-sessions.${String(userProfile.value?.mainId || 'default')}.${String(userId)}`
+})
+function isSessionPinned(id: string): boolean { return pinnedSessionIds.value.includes(id) }
+function toggleSessionPin(id: string): void {
+  pinnedSessionIds.value = isSessionPinned(id)
+    ? pinnedSessionIds.value.filter((item) => item !== id)
+    : [...pinnedSessionIds.value, id]
+}
+const pinnedSessions = computed(() => pinnedSessionIds.value
+  .map((id) => sessions.value.find((session) => session.id === id) || sharedSessions.value.find((session) => session.id === id))
+  .filter((session): session is SessionSummary => Boolean(session)))
 const collapsedProjectHistory = ref<Record<string, boolean>>(savedSidebarHistoryState.projects || {})
 function projectHistoryExpanded(workspaceId: string): boolean { return !collapsedProjectHistory.value[workspaceId] }
 function toggleProjectHistory(workspaceId: string): void { collapsedProjectHistory.value = { ...collapsedProjectHistory.value, [workspaceId]: projectHistoryExpanded(workspaceId) } }
@@ -372,6 +388,9 @@ const desktopCodeFilePath = ref('')
 const desktopWorkspaceSummary = ref<DshWorkspaceSummary | null>(null)
 const createProjectOpen = ref(false)
 const createProjectBusy = ref(false)
+const createProjectSelecting = ref(false)
+const createProjectSelectionPhase = ref('')
+const createProjectSelectionError = ref('')
 const createProjectWorkspace = ref<DshWorkspace | null>(null)
 const createProjectWorktree = ref(false)
 const createProjectTargetKey = ref<string | null>(null)
@@ -415,6 +434,7 @@ function openProjectCreate(targetKey: string | null): void {
   if (!canUseCode.value || !capabilities.localWorkspacePicker) return
   createProjectTargetKey.value = targetKey
   createProjectWorkspace.value = null
+  createProjectSelectionError.value = ''
   createProjectWorktree.value = false
   createProjectOpen.value = true
 }
@@ -430,12 +450,37 @@ function selectBoundProject(key: string, workspace: DshWorkspace): void {
 }
 
 async function chooseProjectFolder(): Promise<void> {
+  if (createProjectSelecting.value) return
+  const selectionToken = authToken.value
+  const startedAt = performance.now()
+  const trace = (stage: string) => console.info('[desktop-workspace-select-ui]', { stage, elapsedMs: Math.round(performance.now() - startedAt) })
+  createProjectSelecting.value = true
+  createProjectSelectionError.value = ''
+  createProjectSelectionPhase.value = locale.value === 'en' ? 'Checking desktop sign-in…' : '正在检查桌面登录状态…'
   try {
+    trace('identity-sync-starting')
+    const identityReady = await Promise.race([
+      syncDesktopAgentIdentity(authToken.value, userProfile.value?.userId),
+      new Promise<false>((resolve) => setTimeout(() => resolve(false), 15000)),
+    ])
+    trace(identityReady ? 'identity-sync-ready' : 'identity-sync-failed')
+    if (!identityReady) throw new Error(locale.value === 'en' ? 'Desktop login is not ready. Sign in again and retry.' : '桌面登录状态尚未同步，请重新登录后重试。')
+    createProjectSelectionPhase.value = locale.value === 'en' ? 'Choose a folder; MOVO will then register it with DSH…' : '请选择文件夹，随后 MOVO 会将其注册到 DSH…'
+    trace('workspace-select-invoking')
     const workspace = await selectDshWorkspace()
+    trace(workspace ? 'workspace-select-completed' : 'workspace-select-cancelled')
     if (!workspace) return
     createProjectWorkspace.value = workspace
   } catch (error) {
-    shareToast.error(error instanceof Error ? error.message : String(error), { duration: 10000 })
+    trace('workspace-select-failed')
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes('[MOVO_AUTH_EXPIRED]') && authToken.value === selectionToken) {
+      handleAuthExpired()
+    }
+    createProjectSelectionError.value = message.replace('[MOVO_AUTH_EXPIRED]', '').trim()
+  } finally {
+    createProjectSelecting.value = false
+    createProjectSelectionPhase.value = ''
   }
 }
 
@@ -683,21 +728,23 @@ function persistSavedUsers(username: string) {
 // an agent started before login has an empty user_id and never shows up in
 // the backend registry, so browser tasks cannot start.
 async function syncDesktopAgentIdentity(token: string, userId: string | number | null | undefined) {
-  if (!capabilities.isDesktop) return
+  if (!capabilities.isDesktop) return true
   const uid = userId !== undefined && userId !== null ? String(userId) : ''
-  if (!uid || !token) return
+  if (!uid || !token) return false
   try {
     const [current, status] = await Promise.all([getSettings(), getAgentStatus()])
     const settingsMatch = current.user_id === uid && current.auth_token === token
-    if (settingsMatch && status.running) return
+    if (settingsMatch && status.running) return true
     if (!settingsMatch) {
       await updateSettings({ ...current, user_id: uid, auth_token: token })
       if (!status.running) await startAgent()
-      return
+      return true
     }
     if (!status.running) await startAgent()
+    return true
   } catch (err) {
     console.warn('[desktop] failed to sync agent identity', err)
+    return false
   }
 }
 
@@ -893,6 +940,8 @@ function logout() {
 function handleAuthExpired() {
   if (!authToken.value && !localStorage.getItem(authTokenKey)) return
   console.warn('[auth] session expired; clearing cached session and opening login dialog')
+  createProjectOpen.value = false
+  createProjectSelectionError.value = ''
   clearAuthenticatedState()
   loginOpen.value = true
 }
@@ -1330,6 +1379,10 @@ async function refreshUserProfile(token: string, createDefaultSession = false, p
     startLocalSession()
   }
   const result = await fetchUserProfile(token)
+  if (result.status === 401) {
+    if (authToken.value === token) handleAuthExpired()
+    return
+  }
   if (result.ok && result.data) {
     prepareProjectBoundary(result.data)
     userProfile.value = result.data
@@ -1366,6 +1419,10 @@ async function refreshUserProfile(token: string, createDefaultSession = false, p
 
 async function refreshEnterprisePolicy(token: string): Promise<void> {
   const result = await fetchUserProfile(token)
+  if (result.status === 401) {
+    if (authToken.value === token) handleAuthExpired()
+    return
+  }
   if (!result.ok || !result.data || authToken.value !== token) return
   const nextCodeAllowed = prepareProjectBoundary(result.data)
   userProfile.value = result.data
@@ -1862,7 +1919,10 @@ async function selectSession(sessionId: string) {
     ))
   }
   const pane = await chatRuntime.selectSession(sessionId, userId, getMainId(), authToken.value || null)
-  if (canUseCode.value) await codeRuntime.attach(pane.key, sessionId)
+  if (canUseCode.value && pane.codeProject?.workspace_id) {
+    const identityReady = await syncDesktopAgentIdentity(authToken.value, userId)
+    if (identityReady) await codeRuntime.attach(pane.key, sessionId)
+  }
   closeSessionSearch()
 }
 
@@ -2068,9 +2128,17 @@ watch(locale, (value) => {
   document.documentElement.lang = value === 'en' ? 'en' : 'zh-CN'
 }, { immediate: true })
 
-watch([normalHistoryExpanded, collapsedProjectHistory], ([normal, projects]) => {
-  localStorage.setItem(sidebarHistoryStateKey, JSON.stringify({ normal, projects }))
+watch([normalHistoryExpanded, sharedHistoryExpanded, pinnedHistoryExpanded, pinnedSessionIds, collapsedProjectHistory], ([normal, shared, pinnedExpanded, pinnedIds, projects]) => {
+  localStorage.setItem(sidebarHistoryStateKey, JSON.stringify({ normal, shared, pinnedExpanded, projects }))
+  if (pinnedStorageKey.value) localStorage.setItem(pinnedStorageKey.value, JSON.stringify(pinnedIds))
 }, { deep: true })
+
+watch(pinnedStorageKey, (key) => {
+  try {
+    const saved = key ? JSON.parse(localStorage.getItem(key) || '[]') : []
+    pinnedSessionIds.value = Array.isArray(saved) ? saved.filter((id: unknown): id is string => typeof id === 'string') : []
+  } catch { pinnedSessionIds.value = [] }
+}, { immediate: true })
 
 watch(themeMode, (value) => {
   localStorage.setItem(themeModeKey, value)
@@ -2191,6 +2259,9 @@ onBeforeUnmount(() => {
       :workspace="createProjectWorkspace"
       :worktree="createProjectWorktree"
       :busy="createProjectBusy"
+      :selecting="createProjectSelecting"
+      :selection-phase="createProjectSelectionPhase"
+      :selection-error="createProjectSelectionError"
       :locale="locale === 'en' ? 'en' : 'zh'"
       @update:worktree="(value) => createProjectWorktree = value"
       @choose-folder="chooseProjectFolder"
@@ -2287,6 +2358,18 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
+      <section class="px-3 pt-2">
+        <button type="button" class="flex w-full items-center gap-1 px-2 pb-1 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400" :aria-expanded="pinnedHistoryExpanded" @click="pinnedHistoryExpanded = !pinnedHistoryExpanded">
+          <span>{{ locale === 'en' ? 'Pinned' : '置顶' }}</span>
+          <svg class="h-3.5 w-3.5 transition-transform duration-150" :class="pinnedHistoryExpanded ? 'rotate-90' : ''" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 3 5 5-5 5"/></svg>
+        </button>
+        <div v-if="pinnedHistoryExpanded" class="max-h-40 overflow-y-auto">
+          <div v-for="session in pinnedSessions" :key="session.id" class="group flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-gray-600 hover:bg-gray-200/50">
+            <button type="button" class="min-w-0 flex-1 truncate text-left" :title="displaySessionTitle(session)" @click="selectSession(session.id)">{{ compactSessionTitle(session) }}</button>
+            <button type="button" class="shrink-0 text-blue-500 opacity-0 group-hover:opacity-100 focus:opacity-100" :aria-label="locale === 'en' ? 'Unpin' : '取消置顶'" :title="locale === 'en' ? 'Unpin' : '取消置顶'" @click="toggleSessionPin(session.id)"><svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6Z"/><path d="M12 14v7"/></svg></button>
+          </div>
+        </div>
+      </section>
       <!-- Scripts Section -->
       <button
         type="button"
@@ -2299,13 +2382,13 @@ onBeforeUnmount(() => {
       </button>
       <div class="flex-1 overflow-y-auto px-3 space-y-1 custom-scrollbar history-scrollbar">
         <div
-          v-if="sessionsLoading"
+          v-if="normalHistoryExpanded && sessionsLoading"
           class="px-3 py-4 text-xs text-gray-400 animate-pulse italic text-center"
         >
           {{ t('app.sidebar.loading_history') }}
         </div>
         <div
-          v-for="session in normalHistoryExpanded ? historyItems : []"
+          v-for="session in normalHistoryExpanded ? historyItems.filter((item) => !isSessionPinned(item.id)) : []"
           :key="session.id"
           class="group w-full text-left px-2.5 py-1.5 rounded-lg transition-all border border-transparent"
           :class="session.id === currentSessionId && currentView === 'chat' 
@@ -2369,6 +2452,7 @@ onBeforeUnmount(() => {
               :aria-label="t('app.sidebar.session_unread')"
               :title="t('app.sidebar.session_unread')"
             ></span>
+            <button v-if="editingSessionId !== session.id" type="button" class="shrink-0 text-gray-400 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-blue-600" :aria-label="locale === 'en' ? 'Pin' : '置顶'" :title="locale === 'en' ? 'Pin' : '置顶'" @click.stop="toggleSessionPin(session.id)"><svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6Z"/><path d="M12 14v7"/></svg></button>
             <button
               type="button"
               class="shrink-0 overflow-hidden rounded-md p-0 text-gray-400 opacity-0 transition-all hover:bg-gray-200 hover:text-red-500 group-hover:w-6 group-hover:p-1 group-hover:opacity-100"
@@ -2380,61 +2464,22 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
-        <div v-if="canUseCode && supportsLocalCodeProjects && projectWorkspacesLoading && !projectHistoryGroups.length" class="mt-5 flex items-center gap-2 px-3 py-2 text-xs text-slate-400">
-          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500"></span>
-          <span>{{ locale === 'en' ? 'Loading projects' : '正在加载项目' }}</span>
-        </div>
-        <section v-else-if="canUseCode && supportsLocalCodeProjects && projectHistoryGroups.length" class="mt-5 space-y-3" aria-label="项目对话">
-          <div class="group flex items-center justify-between px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">
-            <span>{{ locale === 'en' ? 'Projects' : '项目' }}</span>
-            <button v-if="canUseCode && capabilities.localWorkspacePicker" type="button" class="flex h-4 w-4 items-center justify-center rounded text-blue-600 opacity-0 transition-opacity hover:bg-blue-50 group-hover:opacity-100" :aria-label="locale === 'en' ? 'Create project' : '创建项目'" :title="locale === 'en' ? 'Create project' : '创建项目'" @click="createProject"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
-          </div>
-          <section v-for="group in projectHistoryGroups" :key="group.workspaceId" class="space-y-0.5">
-            <button type="button" class="group flex w-full min-w-0 items-center gap-1.5 px-2 py-1 text-left text-xs font-semibold text-slate-500" :aria-expanded="projectHistoryExpanded(group.workspaceId)" :title="group.title" @click="toggleProjectHistory(group.workspaceId)">
-              <svg v-if="projectHistoryExpanded(group.workspaceId)" class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z"/></svg>
-              <svg v-else class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z"/><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5"/></svg>
-              <span class="truncate">{{ group.title }}</span>
-            </button>
-            <button
-              v-for="session in projectHistoryExpanded(group.workspaceId) ? group.items : []"
-              :key="session.id"
-              type="button"
-              class="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-all"
-              :class="session.id === currentSessionId && currentView === 'chat' ? 'bg-white font-semibold text-blue-700 shadow-sm ring-1 ring-gray-200' : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900'"
-              :title="displaySessionTitle(session)"
-              @click="selectSession(session.id)"
-            >
-              <span class="min-w-0 flex-1 truncate">{{ compactSessionTitle(session) }}</span>
-              <span v-if="sessionIsRunning(session.id)" class="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500 animate-pulse"></span>
-              <span v-else-if="sessionIsUnread(session.id)" class="h-2 w-2 shrink-0 rounded-full bg-blue-500"></span>
-            </button>
-          </section>
-        </section>
-        <button v-else-if="canUseCode && supportsLocalCodeProjects" type="button" class="mt-5 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-500 hover:bg-gray-200/50 hover:text-slate-700" @click="createProject">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z"/><path d="M12 11v6m-3-3h6"/></svg>
-          <span>{{ locale === 'en' ? 'Create project' : '创建项目' }}</span>
-        </button>
         <button
-          v-if="!trimmedSessionSearchQuery && !sessionsLoading && sessionsHasMore && historyItems.length >= sessionPageSize"
+          v-if="normalHistoryExpanded && !trimmedSessionSearchQuery && !sessionsLoading && sessionsHasMore && historyItems.length >= sessionPageSize"
           class="w-full text-left px-2.5 py-1 text-[11px] text-gray-400 hover:text-gray-600 disabled:opacity-60 disabled:cursor-not-allowed"
           :disabled="sessionsLoadingMore"
           @click="loadSessions(false)"
         >
           {{ sessionsLoadingMore ? t('ui.loading') : t('app.sidebar.load_more') }}
         </button>
-        <!-- T26: "Shared with me" — second section below Conversations, fed by
-             scope=shared. Renders only when the viewer actively participates
-             (no empty section at zero participations). The server pins the
-             activity order (todo 8) — rows render as-is, no client re-sort.
-             Shared rows carry the owner's title and a shared_unread dot; no
-             delete/rename/leave affordances (leaving lives in the header's
-             members control). -->
+        <!-- Shared conversations follow ordinary conversations. -->
         <template v-if="sharedSessions.length">
-          <div class="mt-5 px-5 pb-1 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">
-            {{ t('session.sharedWithMe.title') }}
-          </div>
+          <button type="button" class="group mt-2 flex w-full items-center gap-1 px-2 pb-1 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400" :aria-expanded="sharedHistoryExpanded" @click="sharedHistoryExpanded = !sharedHistoryExpanded">
+            <span>{{ t('session.sharedWithMe.title') }}</span>
+            <svg class="h-3.5 w-3.5 transition-transform duration-150" :class="sharedHistoryExpanded ? 'rotate-90' : ''" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 3 5 5-5 5"/></svg>
+          </button>
           <div
-            v-for="session in sharedSessions"
+            v-for="session in sharedHistoryExpanded ? sharedSessions.filter((item) => !isSessionPinned(item.id)) : []"
             :key="session.id"
             class="group w-full text-left px-2.5 py-1.5 rounded-lg transition-all border border-transparent"
             :class="session.id === currentSessionId && currentView === 'chat'
@@ -2457,6 +2502,7 @@ onBeforeUnmount(() => {
               >
                 {{ t('session.sharedWithMe.badge') }}
               </span>
+              <button type="button" class="shrink-0 text-gray-400 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-blue-600" :aria-label="locale === 'en' ? 'Pin' : '置顶'" :title="locale === 'en' ? 'Pin' : '置顶'" @click.stop="toggleSessionPin(session.id)"><svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6Z"/><path d="M12 14v7"/></svg></button>
               <span
                 v-if="session.shared_unread"
                 class="h-2 w-2 shrink-0 rounded-full bg-blue-500"
@@ -2466,7 +2512,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <button
-            v-if="!sharedSessionsLoading && sharedSessionsHasMore && sharedSessions.length >= sessionPageSize"
+            v-if="sharedHistoryExpanded && !sharedSessionsLoading && sharedSessionsHasMore && sharedSessions.length >= sessionPageSize"
             class="w-full text-left px-2.5 py-1 text-[11px] text-gray-400 hover:text-gray-600 disabled:opacity-60 disabled:cursor-not-allowed"
             :disabled="sharedSessionsLoadingMore"
             @click="loadSharedSessions(false)"
@@ -2474,6 +2520,31 @@ onBeforeUnmount(() => {
             {{ sharedSessionsLoadingMore ? t('ui.loading') : t('app.sidebar.load_more') }}
           </button>
         </template>
+        <section v-if="canUseCode && supportsLocalCodeProjects" class="space-y-3 pt-7" aria-label="项目对话">
+          <div class="group flex items-center justify-between px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">
+            <span>{{ locale === 'en' ? 'Projects' : '项目' }}</span>
+            <button v-if="canUseCode && capabilities.localWorkspacePicker" type="button" class="flex h-4 w-4 items-center justify-center rounded text-blue-600 opacity-0 transition-opacity hover:bg-blue-50 group-hover:opacity-100" :aria-label="locale === 'en' ? 'Create project' : '创建项目'" :title="locale === 'en' ? 'Create project' : '创建项目'" @click="createProject"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+          </div>
+          <section v-for="group in projectHistoryGroups" :key="group.workspaceId" class="space-y-0.5">
+            <button type="button" class="group flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-500 hover:bg-gray-200/50 hover:text-slate-700" :aria-expanded="projectHistoryExpanded(group.workspaceId)" :title="group.title" @click="toggleProjectHistory(group.workspaceId)">
+              <svg v-if="projectHistoryExpanded(group.workspaceId)" class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z"/></svg>
+              <svg v-else class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z"/><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5"/></svg>
+              <span class="truncate">{{ group.title }}</span>
+            </button>
+            <div
+              v-for="session in projectHistoryExpanded(group.workspaceId) ? group.items.filter((item) => !isSessionPinned(item.id)) : []"
+              :key="session.id"
+              class="group flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-all"
+              :class="session.id === currentSessionId && currentView === 'chat' ? 'bg-white font-semibold text-blue-700 shadow-sm ring-1 ring-gray-200' : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900'"
+              :title="displaySessionTitle(session)"
+            >
+              <button type="button" class="min-w-0 flex-1 truncate text-left" @click="selectSession(session.id)">{{ compactSessionTitle(session) }}</button>
+              <button type="button" class="shrink-0 text-gray-400 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-blue-600" :aria-label="locale === 'en' ? 'Pin' : '置顶'" :title="locale === 'en' ? 'Pin' : '置顶'" @click.stop="toggleSessionPin(session.id)"><svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6Z"/><path d="M12 14v7"/></svg></button>
+              <span v-if="sessionIsRunning(session.id)" class="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500 animate-pulse"></span>
+              <span v-else-if="sessionIsUnread(session.id)" class="h-2 w-2 shrink-0 rounded-full bg-blue-500"></span>
+            </div>
+          </section>
+        </section>
       </div>
 
       <div v-if="!capabilities.isDesktop && (canUseSkills || canUseTools)" class="mt-2 px-5 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">{{ t('app.sidebar.skills') }}</div>

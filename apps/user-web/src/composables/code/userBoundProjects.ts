@@ -14,6 +14,20 @@ interface UserBoundProjectOptions {
   fallbackTitle: (workspaceId: string) => string
 }
 
+async function withProjectLoadTimeout<T>(operation: Promise<T>): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('project list timed out')), 15000)
+      }),
+    ])
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
+}
+
 /** Owns the account boundary for desktop projects and rejects stale responses. */
 export function useUserBoundProjects(options: UserBoundProjectOptions) {
   const bindings = ref<DesktopProject[]>([])
@@ -22,9 +36,11 @@ export function useUserBoundProjects(options: UserBoundProjectOptions) {
   const loading = ref(false)
   const loadedIdentity = ref('')
   let refreshEpoch = 0
+  let inFlightIdentity = ''
 
   function clear(): void {
     refreshEpoch += 1
+    inFlightIdentity = ''
     loadedIdentity.value = ''
     bindings.value = []
     workspaces.value = []
@@ -43,14 +59,17 @@ export function useUserBoundProjects(options: UserBoundProjectOptions) {
     const identity = options.identity()
     const token = options.authToken.value
     if (!identity || !token) return
-    refreshEpoch += 1
+    const requestIdentity = `${identity}:${token}`
+    if (loading.value && inFlightIdentity === requestIdentity) return
     if (loadedIdentity.value !== identity) clear()
+    refreshEpoch += 1
     const activeEpoch = refreshEpoch
+    inFlightIdentity = requestIdentity
     loading.value = true
     try {
-      const nextBindings = await listDesktopProjects(token)
+      const nextBindings = await withProjectLoadTimeout(listDesktopProjects(token))
       let localWorkspaces: DshWorkspace[] = []
-      try { localWorkspaces = await listDshWorkspaces() }
+      try { localWorkspaces = await withProjectLoadTimeout(listDshWorkspaces()) }
       catch { /* Server-owned projects remain visible as unavailable on this device. */ }
       if (activeEpoch !== refreshEpoch || identity !== options.identity() || token !== options.authToken.value) return
       const nextWorkspaces = reconcileUserBoundProjects(
@@ -62,7 +81,10 @@ export function useUserBoundProjects(options: UserBoundProjectOptions) {
       loadedIdentity.value = identity
     } catch { /* Keep the last same-employee snapshot on a control-plane outage. */ }
     finally {
-      if (activeEpoch === refreshEpoch) loading.value = false
+      if (activeEpoch === refreshEpoch) {
+        loading.value = false
+        inFlightIdentity = ''
+      }
     }
   }
 

@@ -299,6 +299,7 @@ export const messages = {
   'plugins.error': { zh: '插件操作失败', en: 'Plugin operation failed' },
   'plugins.installError.notFound': { zh: '未在已配置的 npm 源或 npm 官方源找到该包及版本。请核对包名和版本号，或稍后重试。', en: 'The package and version were not found in the configured npm registry or the official registry. Check the name and version, or try again later.' },
   'plugins.installError.registryUnavailable': { zh: '当前 npm 镜像未找到该版本，且服务器无法连接 npm 官方源。请检查服务器网络，或使用本地上传。', en: 'The configured npm mirror does not have this version, and the server cannot reach the official npm registry. Check server connectivity or upload a local package.' },
+  'plugins.installError.restrictedEnterprise': { zh: '企业已安装同名插件，但你目前没有使用权限，因此无法安装个人副本。请联系管理员在“插件管理”中授权你使用该插件。', en: 'Your organization has installed a plugin with this name, but you do not have access. Ask an administrator to grant you access in Plugin Management.' },
   'plugins.installError.notBundle': { zh: '这个包没有声明 DSH 插件 bundle，无法作为插件安装。', en: 'This package does not declare a DSH plugin bundle and cannot be installed as a plugin.' },
   'plugins.installed': { zh: '插件已安装，启用后在新会话中生效', en: 'Plugin installed. Enable it for new conversations.' },
   'plugins.market': { zh: '官方插件市场即将推出', en: 'Official plugin marketplace is coming' },

@@ -145,7 +145,7 @@ export async function switchTenant(token: string, mainId: string): Promise<AuthR
   }
 }
 
-export async function fetchUserProfile(token: string): Promise<{ ok: boolean; data?: UserProfile; message?: string }> {
+export async function fetchUserProfile(token: string): Promise<{ ok: boolean; data?: UserProfile; message?: string; status?: number }> {
   try {
     const response = await client.get('/auth/me', {
       headers: {
@@ -178,7 +178,7 @@ export async function fetchUserProfile(token: string): Promise<{ ok: boolean; da
       },
     }
   } catch (error: any) {
-    return { ok: false, message: error?.response?.data?.message || error?.message || t('api.auth.get_user_info_failed') }
+    return { ok: false, status: error?.response?.status, message: error?.response?.data?.message || error?.message || t('api.auth.get_user_info_failed') }
   }
 }
 

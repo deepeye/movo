@@ -35,6 +35,7 @@ function errorText(error: unknown): string {
   const messages: Record<string, string> = {
     plugin_package_not_found: 'plugins.installError.notFound',
     plugin_registry_unavailable: 'plugins.installError.registryUnavailable',
+    personal_plugin_conflicts_with_restricted_enterprise_plugin: 'plugins.installError.restrictedEnterprise',
     'not-a-bundle': 'plugins.installError.notBundle',
   }
   const key = messages[String(detail)]
