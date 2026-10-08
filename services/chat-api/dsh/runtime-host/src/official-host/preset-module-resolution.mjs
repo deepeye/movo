@@ -1,4 +1,12 @@
-import { dirname, join } from 'node:path'
+import { dirname, isAbsolute, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+
+function loaderSpecifier(name) {
+  // DSH's declarative preset tree imports row names directly. A Windows
+  // absolute path is parsed as a drive-letter URL scheme by Node's ESM loader.
+  return process.platform === 'win32' && typeof name === 'string' && isAbsolute(name)
+    ? pathToFileURL(name).href : name
+}
 
 // The app-boot bare-module anchor applies to the Host Include only. DSH 0.2's
 // declarative presets mount a second Loader tree, so resolve their package rows
@@ -27,7 +35,7 @@ function resolveRows(rows, installation, presetId) {
       const deny = config.toolFilter.deny.filter(name => !/^schedule_(create|delete|list|update)$/.test(name))
       config = { ...config, toolFilter: { ...config.toolFilter, deny } }
     }
-    return { ...row, name: resolved, ...(config === undefined ? {} : { config }) }
+    return { ...row, name: loaderSpecifier(resolved), ...(config === undefined ? {} : { config }) }
   })
 }
 
